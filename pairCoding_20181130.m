@@ -31,10 +31,8 @@ stim = trimPreAndTailPts(stimComplete, params.prePts, params.stimPts);
 filter = getFilter(stim, response, params);
 midpoint = round(length(filter)/2); %TODO: truncate the filter in the filter collection stage
 %filter(midpoint:end) = 0;
-midpoint = round(length(filter)/2);
-filter = [filter(1, midpoint + 1:end) filter(1, 1:midpoint)];
-figure; plot(filter);
-
+%midpoint = round(length(filter)/2);
+%filter = [filter(1, midpoint + 1:end) filter(1, 1:midpoint)];
 figure; plot(filter);
 
 rawNL = getRawNL(filter, response, stim, params); 
@@ -59,23 +57,13 @@ hold on; plot(meanRSquared .* ones(1,length(rSquared)));
 
 function [rSquared, meanRSquared] = getVarExplainedLN(prediction, response)
 
-epochCount = size(prediction, 1);
-rSquared = ones(1,epochCount);
+responseMean = mean(response, 2);
+sumSquareErr = response - prediction;
+sumSquareTotal = response - responseMean;
+sumSquareErr = sum((sumSquareErr.^2), 2);
+sumSquareTotal = sum((sumSquareTotal.^2), 2);
 
-for ii = 1:epochCount %TODO: Set this as vectorized 
-    singleResponse = response(ii,:);
-    singlePrediction = prediction(ii,:);
-    responseMean = mean(singleResponse,2);
-    
-    sumSquareErr = singleResponse - singlePrediction;
-    sumSquareTotal = singleResponse - responseMean;
-    
-    sumSquareErr = sum(sumSquareErr.^2);
-    sumSquareTotal = sum(sumSquareTotal.^2);
-    
-    rSquared(1,ii) = 1 - (sumSquareErr / sumSquareTotal);
-    
-end
+rSquared = 1 - (sumSquareErr ./ sumSquareTotal);
 
 meanRSquared = mean(rSquared);
 
@@ -129,12 +117,19 @@ filter = filter / max(abs(filter));  % normalize (set peak to 1)
 end
 
 function rawNL = getRawNL(filter, data, stim, params)
+numEpochs = size(stim, 1);
+numPts = size(stim, 2);
 
-generatorSignal = convolveFilterWithStim(filter, stim);
-
+% Generate a straight line with params.numBins points between the largest
+% and smallest generator signal.
+generatorSignal = zeros(numEpochs, numPts);
+for ii = 1:numEpochs
+    stimSingle = stim(ii, :); %- mean(stim(ii, :));  % subtract mean from stim
+    generatorSignal(ii,:) = convolveFilterWithStim(filter, stimSingle);
+end
 minGen = min(min(generatorSignal));
 maxGen = max(max(generatorSignal));
-step = (maxGen-minGen) / params.numBins;
+step = (maxGen-minGen)/params.numBins;
 
 bins = zeros(params.numBins, 1);
 for ii = 1:params.numBins
@@ -144,8 +139,6 @@ end
 % loop across all epochs to compute nonlinearity
 epochBinCnt = zeros(params.numBins,1);
 dataBinned = zeros(params.numBins,1);
-numEpochs = size(stim, 1);
-
 for ii = 1:numEpochs
     singleGeneratorSignal = generatorSignal(ii, :);
     binIndices = cell(params.numBins, 1);
@@ -160,29 +153,25 @@ for ii = 1:numEpochs
             if ii == 1
                 dataBinned(jj) = mean(singleEpochData(binIndices{jj}));
             else
-                dataBinned(jj) = dataBinned(jj) + ...
-                    mean(singleEpochData(binIndices{jj}));
+                dataBinned(jj) = dataBinned(jj) + mean(singleEpochData(binIndices{jj}));
             end
             epochBinCnt(jj) = epochBinCnt(jj) + 1;
         end
-    end 
+    end
     
 end
 
 dataBinned(epochBinCnt == 0) = NaN;
+% indices = find(epochBinCnt > 0);  %TODO: see if anything here is necessary when something is NaN
+% dataBinned(indices) = dataBinned(indices) ./ epochBinCnt(indices);
 dataBinned = dataBinned ./ epochBinCnt;
 if sum(isnan(dataBinned)) > 0
     error('Bin contains zero counts! See lines 177-184.');
 end
-%The following lines might be useful if you get the error above.
-% indices = find(epochBinCnt > 0);  
-% dataBinned(indices) = dataBinned(indices) ./ epochBinCnt(indices);
 
-dataBinned = dataBinned ./ epochBinCnt;
-
-%nanLocs = isnan(dataBinned);
-%indices = find(nanLocs == 0);
-
+% fit nonlinearity and make full prediction
+nanLocs = isnan(dataBinned);
+indices = find(nanLocs == 0);
 rawNL(1,:) = bins;
 rawNL(2,:) = dataBinned;
 end
