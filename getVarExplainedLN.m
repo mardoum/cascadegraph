@@ -11,3 +11,4 @@ rSquared = 1 - (sumSquareErr ./ sumSquareTotal);
 meanRSquared = mean(rSquared);
 
 end
+

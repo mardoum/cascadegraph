@@ -1,41 +1,92 @@
-function rawNL = getRawNL(filter, data, stim, params)
+function rawNL = getRawNL(filter, data, stim, numBins, varargin)
+
 numEpochs = size(stim, 1);
-numPts = size(stim, 2);
 
-% Generate a straight line with params.numBins points between the largest
-% and smallest generator signal.
-generatorSignal = zeros(numEpochs, numPts);
-for ii = 1:numEpochs
-    stimSingle = stim(ii, :) - mean(stim(ii, :));  % subtract mean from stim
-    generatorSignal(ii,:) = convolveFilterWithStim(filter, stimSingle);
+generatorSignal = convolveFilterWithStim(filter, stim);
+
+% Let the user choose how to bin the generator signal values - either with
+% equally spaced bins or equally populated bins. If they don't specify a
+% value in the passed struct "params", then default to equally populated
+% bins.
+
+numvarargs = length(varargin);
+
+if numvarargs > 1
+    error('Too many input arguments');
+elseif numvarargs ~= 0
+    binType = varargin{1};
+else
+    binType = 'binPop';
 end
-minGen = min(min(generatorSignal));
-maxGen = max(max(generatorSignal));
-step = (maxGen-minGen)/params.numBins;
 
-bins = zeros(params.numBins, 1);
-for ii = 1:params.numBins
-    bins(ii) = minGen + ii * step;
+if strcmp(binType, 'binWidth')
+    minGen = min(min(generatorSignal));
+    maxGen = max(max(generatorSignal));
+    step = (maxGen-minGen)/numBins;
+    binCenter = zeros(1, numBins);
+    
+    for ii = 1:numBins
+        binCenter(ii) = minGen + ii * step;
+    end
+    
+    binWindowHalf = step .* ones(1, numBins) / 2;
+    
+elseif strcmp(binType, 'binPop')
+    sortedGeneratorSignal = sort(generatorSignal(:));
+    countInBin = round(length(sortedGeneratorSignal) / numBins);
+    binCenter = zeros(1, numBins);
+    binWindowHalf = binCenter;
+    
+    for ii = 1:numBins
+        startPoint = (ii-1) * countInBin + 1;
+        endPoint = min(ii * countInBin, length(sortedGeneratorSignal));
+        if ii == numBins
+            endPoint = length(sortedGeneratorSignal);
+        end
+    
+        currentPopulation = sortedGeneratorSignal(startPoint:endPoint);
+    
+        binCenter(ii) = mean(currentPopulation);
+        
+        %Generate variable bin windows. Since you cannot calculate the
+        %first bin window by taking the midpoint between binMean_i and 
+        %binMean_(i-1), use the window of the final bin instead.
+        
+        if ii > 1
+            binWindowHalf(ii) = (binCenter(ii) - binCenter(ii-1))/2;
+        end
+        
+        if ii == numBins
+            binWindowHalf(1) = binWindowHalf(ii);
+        end
+    end
+    
+else
+    error('Binning method not implemented.')
 end
 
 % loop across all epochs to compute nonlinearity
-epochBinCnt = zeros(params.numBins,1);
-dataBinned = zeros(params.numBins,1);
+epochBinCnt = zeros(numBins,1);
+dataBinned = zeros(numBins,1);
 for ii = 1:numEpochs
     singleGeneratorSignal = generatorSignal(ii, :);
-    binIndices = cell(params.numBins, 1);
-    for jj = 1:params.numBins
-        binIndices{jj} = find((singleGeneratorSignal < bins(jj) + ...
-            step/2) & (singleGeneratorSignal > bins(jj) - step/2));
+    binIndices = cell(numBins, 1);
+    for jj = 1:numBins
+        binLHS = binCenter(jj) - binWindowHalf(jj);
+        binRHS = binCenter(jj) + binWindowHalf(jj);
+        
+        binIndices{jj} = find((singleGeneratorSignal < binRHS) & ...
+            (singleGeneratorSignal > binLHS));
     end
     
     singleEpochData = data(ii, :);
-    for jj = 1:params.numBins
+    for jj = 1:numBins
         if length(binIndices{jj}) > 4
+            singleEpochMean = mean(singleEpochData(binIndices{jj}));
             if ii == 1
-                dataBinned(jj) = mean(singleEpochData(binIndices{jj}));
+                dataBinned(jj) = singleEpochMean;
             else
-                dataBinned(jj) = dataBinned(jj) + mean(singleEpochData(binIndices{jj}));
+                dataBinned(jj) = dataBinned(jj) + singleEpochMean;
             end
             epochBinCnt(jj) = epochBinCnt(jj) + 1;
         end
@@ -43,17 +94,8 @@ for ii = 1:numEpochs
     
 end
 
-dataBinned(epochBinCnt == 0) = NaN;
-% indices = find(epochBinCnt > 0);  %TODO: see if anything here is necessary when something is NaN
-% dataBinned(indices) = dataBinned(indices) ./ epochBinCnt(indices);
 dataBinned = dataBinned ./ epochBinCnt;
-if sum(isnan(dataBinned)) > 0
-    error('Bin contains zero counts! See lines 177-184.');
-end
 
-% fit nonlinearity and make full prediction
-nanLocs = isnan(dataBinned);
-indices = find(nanLocs == 0);
-rawNL(1,:) = bins;
+rawNL(1,:) = binCenter;
 rawNL(2,:) = dataBinned;
 end
