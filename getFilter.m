@@ -1,70 +1,51 @@
-%This function computes the cross-correlation between the stimuli and the
-%response, and sets this as the linear filter for the LN model.
+function [filterCausal, filterAnticausal] = getFilter(stim, response, params)
+% Computes filter that predicts response given stimulus. This is the cross-correlation between
+% stimulus and response.
+% Input:
+%   stim      - matrix of row vectors
+%   response  - matrix of row vectors
+%   params    - struct of parameters (temp)
+% Output:
+%   filterCausal      - causal half of filter (representing stimuli occurring before time 0)
+%   filterAnticausal  - anticausal half of filter (representing stimuli occurring after time 0).
+%                       Structure in this half is entirely due to auto-correlation in stimulus.
 
-function filter = getFilter(stim, response, params)
-numPts = size(stim, 2);
+assert(size(stim,1) < size(stim,2) && size(response,1) < size(response,2), ...
+    'Incompatible matrix or vector orientation')
 
-% loop across all epochs to compute filter
-for ii = 1:size(response, 1)
-    %responseSingle = zeros(1, numPts * 2 - 1);  
-    %stimSingle = responseSingle;
-    
-	%responseSingle(1,1:numPts) = response(ii, :) - mean(response(ii, :));
-	%stimSingle(1,1:numPts) = stim(ii, :);
-     
-    responseSingle = response(ii, :) - mean(response(ii, :));
-    stimSingle = stim(ii, :);
-    
-    dataFFT = fft(responseSingle);
-    stmFFT = fft(stimSingle);
-    
-    if ii == 1
-        filterFFT = conj(stmFFT) .* dataFFT; 
-    else
-        filterFFT = filterFFT + conj(stmFFT) .* dataFFT;
-    end
-end
-filterFFT = filterFFT / size(response, 1);
+% VECTORIZED version
+stimFFT = fft(stim, [], 2);
+respFFT = fft(response, [], 2);
+filterFFT = mean(respFFT .* conj(stimFFT));
 
-%Deal with Nyquist frequency
-filterFFT = filterFFT / numPts;
-freqStep = 1 / (numPts * params.samplingInterval);
+% filterFFT = filterFFT ./ mean(stimFFT .* conj(stimFFT));  % TODO: make this optional, since in some cases could cause blow-up
 
-%Remove frequencies higher than specified cutoff
-maxFreq = round(params.frequencyCutoff / freqStep);
-filterFFT(maxFreq:numPts - maxFreq) = 0;
-filterFFT(1) = 0;
 
-filter = real(ifft(filterFFT));
-filter(params.staPts:length(filter) - params.staPts) = 0;
+% % LOOP version
+% % loop across all epochs to compute filter
+% numEpochs = size(stim,1);
+% filterFFT = zeros(1,numPts);
+% for ii = 1:size(response, 1)
+%     responseSingle = response(ii, :);
+%     stimSingle = stim(ii, :);
+%     
+%     dataFFT = fft(responseSingle);
+%     stmFFT = fft(stimSingle);
+%     filterFFT = filterFFT + conj(stmFFT) .* dataFFT; 
+% end
+% filterFFT = filterFFT / numEpochs;  % to get average over epochs
 
-%Normalize the filter (such that it becomes an impulse response rotated
-%about the x-axis)
-filter = filter / max(abs(filter));
 
-%We remove the zeros resulting from deriving the filters with linear
-%convolution (i.e. zero padding of stim and response before multiplying in
-%frequency domain) or zeros resulting from params.staPts setting.
-filter(filter == 0) = [];
+% numPts = size(stim,2);
+% filterFFT = filterFFT / numPts;  % what's the purpose of this?
 
-%Save filter as two portions - the part that contains "positive time" (after
-%stimulus presentation) and the one with "negative time" (before stimulus
-%presentation). Don't save any of the zeros that result from the padding
-%stage.
-%Save the negative time portion as half as short as the positive time
-%portion.
+% frequency cutoff, remove DC component, ifft
+filterFFT = applyFrequencyCutoffToFFT(filterFFT, params.frequencyCutoff, params.samplingInterval);
+filterFFT(1) = 0;  % remove DC component
+filterFull = real(ifft(filterFFT));
 
-%TO DO: Make this portion tunable.
-dividingTimeLength = round(length(filter) / 8);
-positiveTimeEnd = 2 * dividingTimeLength;
-negativeTimeStart = length(filter) - dividingTimeLength;
-
-if strcmp(params.filterType, 'half')
-    filter = struct('positiveTime', filter(1:positiveTimeEnd));
-else
-    filter = struct('positiveTime', filter(1:positiveTimeEnd), ...
-        'negativeTime', filter(negativeTimeStart + 1:end));
-end
+% save causal and anticausal filter portions, each cut down to length = filterPoints
+filterCausal     = filterFull(1 : params.filterPts);
+filterAnticausal = filterFull(end - params.filterPts + 1 : end);
 
 end
-

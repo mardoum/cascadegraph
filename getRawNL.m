@@ -1,101 +1,56 @@
-function rawNL = getRawNL(filter, data, stim, numBins, varargin)
+function [nlX, nlY] = getRawNL(generatorSignal, response, numBins, binType)
+% Returns binned sampling of empirical nonlinearity that maps generator signal to response.
+% Input:
+%   generatorSignal  - matrix of row vectors
+%   response         - matrix of row vectors
+%   numBins          - number of bins to sample nonlinearity
+%   binType          - string 'equalWidth' or 'equalN'
+% Output:
+%   nlx  - vector of nonlinearity x values (bin centers). 
+%       If binType is set to 'equalWidth', bin centers are midpoints of each bin. 
+%       If binType is set to 'equalN', bin centers are the means of x in each bin
+%   nly  - vector of nonlinearity y values
 
-numEpochs = size(stim, 1);
+assert(isequal(size(generatorSignal), size(response)), 'Input matrices must have same size')
 
-generatorSignal = convolveFilterWithStim(filter, stim);
+assert(size(generatorSignal,1) < size(generatorSignal,2), 'Incompatible matrix or vector orientation')
 
-% Let the user choose how to bin the generator signal values - either with
-% equally spaced bins or equally populated bins. If they don't specify a
-% value in the passed struct "params", then default to equally populated
-% bins.
+assert(numBins > 1, 'number of bins must be greater than 1')
 
-numvarargs = length(varargin);
+generatorSignal = reshape(generatorSignal', 1, []);
+response = reshape(response', 1, []);
+numPoints = length(generatorSignal);
 
-if numvarargs > 1
-    error('Too many input arguments');
-elseif numvarargs ~= 0
-    binType = varargin{1};
+nlX = zeros(numBins, 1);
+nlY = zeros(numBins, 1);
+
+% bin signal and assign indices
+if strcmp(binType, 'equalWidth')
+    [N, binEdges, binIdx] = histcounts(generatorSignal, numBins);
+    nlX = 0.5 * (binEdges(1:end-1) + binEdges(2:end));
+    
+elseif strcmp(binType, 'equalN')
+    assert(rem(numPoints, numBins) == 0, ...
+        'If bin type option set to equally populated bins, # points must be evenly divisible by # bins')
+    
+    countInBin = numPoints / numBins;
+    gsSorted = sort(generatorSignal(:));
+    binEdgeIndices = (1 + (0:numBins-1) * countInBin);
+    binEdges = [gsSorted(binEdgeIndices); gsSorted(end)+1];  % last edge += 1 because bins are [ )
+    
+    [N, ~, binIdx] = histcounts(generatorSignal, binEdges);
+
 else
-    binType = 'binPop';
+    error('binType not recognized')
 end
 
-if strcmp(binType, 'binWidth')
-    minGen = min(min(generatorSignal));
-    maxGen = max(max(generatorSignal));
-    step = (maxGen-minGen)/numBins;
-    binCenter = zeros(1, numBins);
+for ii = 1:numBins
+    binMask = (binIdx == ii);
+    nlY(ii) = mean(response(binMask));
     
-    for ii = 1:numBins
-        binCenter(ii) = minGen + ii * step;
+    if strcmp(binType, 'equalN')
+        nlX(ii) = mean(generatorSignal(binMask));
     end
-    
-    binWindowHalf = step .* ones(1, numBins) / 2;
-    
-elseif strcmp(binType, 'binPop')
-    sortedGeneratorSignal = sort(generatorSignal(:));
-    countInBin = round(length(sortedGeneratorSignal) / numBins);
-    binCenter = zeros(1, numBins);
-    binWindowHalf = binCenter;
-    
-    for ii = 1:numBins
-        startPoint = (ii-1) * countInBin + 1;
-        endPoint = min(ii * countInBin, length(sortedGeneratorSignal));
-        if ii == numBins
-            endPoint = length(sortedGeneratorSignal);
-        end
-    
-        currentPopulation = sortedGeneratorSignal(startPoint:endPoint);
-    
-        binCenter(ii) = mean(currentPopulation);
-        
-        %Generate variable bin windows. Since you cannot calculate the
-        %first bin window by taking the midpoint between binMean_i and 
-        %binMean_(i-1), use the window of the final bin instead.
-        
-        if ii > 1
-            binWindowHalf(ii) = (binCenter(ii) - binCenter(ii-1))/2;
-        end
-        
-        if ii == numBins
-            binWindowHalf(1) = binWindowHalf(ii);
-        end
-    end
-    
-else
-    error('Binning method not implemented.')
 end
 
-% loop across all epochs to compute nonlinearity
-epochBinCnt = zeros(numBins,1);
-dataBinned = zeros(numBins,1);
-for ii = 1:numEpochs
-    singleGeneratorSignal = generatorSignal(ii, :);
-    binIndices = cell(numBins, 1);
-    for jj = 1:numBins
-        binLHS = binCenter(jj) - binWindowHalf(jj);
-        binRHS = binCenter(jj) + binWindowHalf(jj);
-        
-        binIndices{jj} = find((singleGeneratorSignal < binRHS) & ...
-            (singleGeneratorSignal > binLHS));
-    end
-    
-    singleEpochData = data(ii, :);
-    for jj = 1:numBins
-        if length(binIndices{jj}) > 4
-            singleEpochMean = mean(singleEpochData(binIndices{jj}));
-            if ii == 1
-                dataBinned(jj) = singleEpochMean;
-            else
-                dataBinned(jj) = dataBinned(jj) + singleEpochMean;
-            end
-            epochBinCnt(jj) = epochBinCnt(jj) + 1;
-        end
-    end
-    
-end
-
-dataBinned = dataBinned ./ epochBinCnt;
-
-rawNL(1,:) = binCenter;
-rawNL(2,:) = dataBinned;
 end
