@@ -1,29 +1,32 @@
-%% LN modeling skeleton
-clear;
+%% LN modeling test Main
+clear; close all;
 addpath('/Users/pmardoum/Desktop/LN_modeling_Adree/');
 
-% Here are all the params for the filter finding - set as a struct...
+%% set params
 
-% TODO: Retrieve the four parameters below from metadata automatically before exporting as .mat file
+% params struct
+p.fileName = '041317Ac3.mat';
+
 p.samplingInterval = 1e-4;
 p.frequencyCutoff  = 20;
 p.prePts           = 3000;  
 p.stimPts          = 50000;
-p.filterPts        = 12500;  % filter length (length of ONE SIDE, causal, or anti-causal)
 
 % for filter
-useAnticausal = false;
+p.filterPts        = 12500;  % filter length (length of ONE SIDE, causal, or anti-causal)
+p.useAnticausal    = true;
+p.correctStimPower = false;
 
 % for nonlinearity
-numBins = 100;
-binningType = 'equalN';
+p.numBins          = 100;
+p.binningType      = 'equalN';
 
 % for polynomial fit of nonlinearity
-degree = 3;
+p.polyFitDegree    = 3;
+
 
 %% get data
-fileName = '041317Ac3.mat';
-S = load(fileName);
+S = load(p.fileName);
 responseComplete = S.BlueDataExc;
 stimComplete = S.BlueStimuliExc;
 
@@ -35,29 +38,36 @@ responseComplete = baselineSubtract(responseComplete, p.prePts);
 response = trimPreAndTailPts(responseComplete, p.prePts, p.stimPts);
 stim = trimPreAndTailPts(stimComplete, p.prePts, p.stimPts);
 
-%% get model
-[filterCausal, filterAnticausal] = getFilter(stim, response, p);
+clear S responseComplete stimComplete
 
-if useAnticausal
+
+%% get model
+[filterCausal, filterAnticausal] = getFilter(stim, response, p.filterPts, ...
+    p.correctStimPower, p.frequencyCutoff, p.samplingInterval);
+
+if p.useAnticausal
     filter = [filterCausal filterAnticausal];
 else
     filter = filterCausal;
 end
 filter = filter/max(abs(filter));
+clear filterCausal filterAnticausal
 
-generatorSignal = convolveFilterWithStim(filter, stim, useAnticausal);
+generatorSignal = convolveFilterWithStim(filter, stim, p.useAnticausal);
 
-[nlX, nlY] = getRawNL(generatorSignal, response, numBins, binningType); 
+[nlX, nlY] = getRawNL(generatorSignal, response, p.numBins, p.binningType); 
 
-[fitNL.coeff, ~, fitNL.mu] = polyfit(nlX, nlY, degree);
+[fitNL.coeff, ~, fitNL.mu] = polyfit(nlX, nlY, p.polyFitDegree);
+
 
 %% forward run
-prediction = getPrediction(filter, stim, @polyval, fitNL, useAnticausal);
+prediction = getPrediction(filter, stim, @polyval, fitNL, p.useAnticausal);
 
 %% evaluate performance
 rSquared = getVarExplained(prediction, response);
 
 rSquaredAll = getVarExplained(reshape(prediction',1,[]), reshape(response',1,[]));
+
 
 %% plot
 evalPoly = polyval(fitNL.coeff, nlX, [], fitNL.mu);
@@ -72,6 +82,9 @@ xlabel('generator signal'); ylabel('data');
 subplot(2,2,2); plot(rSquared, 'bo');
 hold on; plot(mean(rSquared) .* ones(1,length(rSquared)));
 xlabel('epoch'); ylabel('r^2 value');
+
+disp(['Overall R^2: ' num2str(rSquaredAll) '   Mean R^2: ' num2str(mean(rSquared))])
+
 
 %%
 % figure; hold on;

@@ -6,8 +6,8 @@ function [nlX, nlY] = getRawNL(generatorSignal, response, numBins, binType)
 %   numBins          - number of bins to sample nonlinearity
 %   binType          - string 'equalWidth' or 'equalN'
 % Output:
-%   nlx  - vector of nonlinearity x values (bin centers). 
-%       If binType is set to 'equalWidth', bin centers are midpoints of each bin. 
+%   nlx  - vector of nonlinearity x values (bin centers)
+%       If binType is set to 'equalWidth', bin centers are midpoints of each bin
 %       If binType is set to 'equalN', bin centers are the means of x in each bin
 %   nly  - vector of nonlinearity y values
 
@@ -26,7 +26,7 @@ nlY = zeros(numBins, 1);
 
 % bin signal and assign indices
 if strcmp(binType, 'equalWidth')
-    [N, binEdges, binIdx] = histcounts(generatorSignal, numBins);
+    [~, binEdges, binIdx] = histcounts(generatorSignal, numBins);
     nlX = 0.5 * (binEdges(1:end-1) + binEdges(2:end));
     
 elseif strcmp(binType, 'equalN')
@@ -38,7 +38,7 @@ elseif strcmp(binType, 'equalN')
     binEdgeIndices = (1 + (0:numBins-1) * countInBin);
     binEdges = [gsSorted(binEdgeIndices); gsSorted(end)+1];  % last edge += 1 because bins are [ )
     
-    [N, ~, binIdx] = histcounts(generatorSignal, binEdges);
+    [~, ~, binIdx] = histcounts(generatorSignal, binEdges);
 
 else
     error('binType not recognized')
