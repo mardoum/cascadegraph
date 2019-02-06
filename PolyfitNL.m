@@ -1,4 +1,4 @@
-classdef PolyfitNL < handle
+classdef PolyfitNL < ModelNode
     
     properties
         coeff
@@ -35,4 +35,13 @@ classdef PolyfitNL < handle
         end
         
     end
+    
+    methods (Access = protected)
+        
+        function out = returnOutput(obj, in)
+            out = obj.process(in);
+        end
+        
+    end
+    
 end

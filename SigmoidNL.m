@@ -1,4 +1,4 @@
-classdef SigmoidNL < handle
+classdef SigmoidNL < ModelNode
 	% cumulative normal density function fit to NL
     
     properties
@@ -6,16 +6,6 @@ classdef SigmoidNL < handle
         beta        % sensitivity of NL to generator signal
         gamma       % determines threshold/shoulder location
         epsilon     % shifts all up or down
-    end
-
-    methods (Static)
-
-        function out = fn(params, xarray)
-            % sigmoid nonlinearity parameterized as cumulative normal density function
-            % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
-            out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
-        end
-
     end
     
 	methods
@@ -81,6 +71,24 @@ classdef SigmoidNL < handle
             end
         end
 
+    end
+    
+    methods (Static)
+
+        function out = fn(params, xarray)
+            % sigmoid nonlinearity parameterized as cumulative normal density function
+            % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
+            out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
+        end
+
+    end
+    
+    methods (Access = protected)
+       
+        function out = returnOutput(obj, in)
+            out = obj.process(in);
+        end
+        
     end
     
 end

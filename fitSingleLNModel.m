@@ -41,7 +41,7 @@ stim = trimPreAndTailPts(stimComplete, p.prePts, p.stimPts);
 clear S responseComplete stimComplete
 
 
-%% get model
+%% get filter and sample NL function
 [filterCausal, filterAnticausal] = getFilter(stim, response, p.filterPts, ...
     p.correctStimPower, p.frequencyCutoff, p.samplingInterval);
 
@@ -57,10 +57,36 @@ generatorSignal = convolveFilterWithStim(filter, stim, p.useAnticausal);
 
 [nlX, nlY] = getRawNL(generatorSignal, response, p.numBins, p.binningType); 
 
+
+
+%% fit NL and get prediction (with user-defined class)
+
+dataNode = DataNode(stim);
+filterNode = FilterNode(filter, p.useAnticausal);
+
+polyfitNlNode = PolyfitNL();
+polyfitNlNode.optimizeParams(nlX, nlY, p.polyFitDegree);
+
+sigNlNode = SigmoidNL();
+sigNlNode.optimizeParams(nlX, nlY);
+
+filterNode.upstream = dataNode;
+polyfitNlNode.upstream = filterNode;
+sigNlNode.upstream = filterNode;
+
+predPoly = polyfitNlNode.runWithUpstream();
+predSig = sigNlNode.runWithUpstream();
+
+figure; hold on; plot(predPoly(1,:)); plot(predSig(1,:));
+
+rSquaredAllPoly = getVarExplained(reshape(predPoly',1,[]), reshape(response',1,[]))
+rSquaredAllSig  = getVarExplained(reshape(predSig',1,[]), reshape(response',1,[]))
+
+
+
+%% fit NL and get prediction (without user-defined class)
+
 [fitNL.coeff, ~, fitNL.mu] = polyfit(nlX, nlY, p.polyFitDegree);
-
-
-%% forward run
 prediction = getPrediction(filter, stim, @polyval, fitNL, p.useAnticausal);
 
 %% evaluate performance

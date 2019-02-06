@@ -1,4 +1,4 @@
-classdef Filter < handle
+classdef FilterNode < ModelNode
 	
     properties
 		filter
@@ -7,7 +7,7 @@ classdef Filter < handle
 
 	methods
         
-		function obj = Filter(filter, hasAnticausalHalf)  % constructor
+		function obj = FilterNode(filter, hasAnticausalHalf)  % constructor
 			if nargin > 0
 				assert(isvector(filter) && ismember(hasAnticausalHalf,[0,1]), ...
                     'error: filter and hasAnticausalHalf must be passed to constructor together');
@@ -17,8 +17,17 @@ classdef Filter < handle
         end
 
 		function out = process(obj, stim)
-			out = convolveFilterWithStim(obj.filter, stim, obj.hhasAnticausalHalf);
-		end
+			out = convolveFilterWithStim(obj.filter, stim, obj.hasAnticausalHalf);
+        end
 
-	end
+    end
+    
+    methods (Access = protected)
+        
+        function out = returnOutput(obj, in)
+            out = obj.process(in);
+        end
+            
+    end
+    
 end
