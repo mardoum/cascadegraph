@@ -9,7 +9,6 @@ classdef SigmoidNL < ModelNode
     end
     
 	methods
-        
 		function obj = SigmoidNL(alpha, beta, gamma, epsilon)  % constructor
 			if nargin > 0
 				obj.alpha   = alpha;
@@ -18,13 +17,24 @@ classdef SigmoidNL < ModelNode
                 obj.epsilon = epsilon;
 			end
         end
+    end
+    
+    methods (Static)
+        function out = fn(params, xarray)
+            % sigmoid nonlinearity parameterized as cumulative normal density function
+            % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
+            out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
+        end
+    end
+    
+    methods
         
         function out = process(obj, in)
             params = obj.getParamsVec;
             out = obj.fn(params, in);
         end
         
-        function optimizeParams(obj, xarray, yarray, params0, lb, ub, options, optimIters)
+        function params = optimizeParams(obj, xarray, yarray, params0, lb, ub, options, optimIters)
             narginchk(3,8);  % set defaults
             if nargin < 4
                 params0 = [2*max(yarray), 0.1, -1, -1]';
@@ -39,7 +49,7 @@ classdef SigmoidNL < ModelNode
                 options = optimset('MaxIter', 1500, 'MaxFunEvals', 600*length(params0), 'Display', 'off');
             end
             if nargin < 8
-                optimIters = 7;
+                optimIters = 5;
             end
             
             for optimIter = 1:optimIters
@@ -55,6 +65,13 @@ classdef SigmoidNL < ModelNode
                       obj.beta;
                       obj.gamma;
                       obj.epsilon];
+        end
+        
+        function params = getParamsStruct(obj)
+            params.alpha   = obj.alpha;
+            params.beta    = obj.beta;
+            params.gamma   = obj.gamma;
+            params.epsilon = obj.epsilon;
         end
         
         function writeParamsToSelf(obj, params)
@@ -73,22 +90,10 @@ classdef SigmoidNL < ModelNode
 
     end
     
-    methods (Static)
-
-        function out = fn(params, xarray)
-            % sigmoid nonlinearity parameterized as cumulative normal density function
-            % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
-            out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
-        end
-
-    end
-    
     methods (Access = protected)
-       
         function out = returnOutput(obj, in)
             out = obj.process(in);
         end
-        
     end
     
 end

@@ -43,15 +43,6 @@ classdef ModelNode < handle
             end
         end
         
-        function out = returnOutput(in)
-            % should be overridden to implement subclass-specific processing
-            if nargin < 1 || isempty(in)
-                out = [];
-            else
-                out = in;
-            end
-        end
-        
         function out = getNumUpstreamOf(node)
             if isempty(node.upstream)
                 out = 0;
@@ -71,6 +62,12 @@ classdef ModelNode < handle
                 disp(node)
             end
         end
+        
+    end
+    
+    methods (Abstract, Access = protected)
+        
+        returnOutput(in)
         
     end
     
