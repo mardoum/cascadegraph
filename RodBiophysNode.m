@@ -99,7 +99,7 @@ classdef RodBiophysNode < ModelNode
         end
         
         function writeParamsToSelf(obj, params)
-            if isvector(params)
+            if ~isstruct(params)
                 params = obj.paramsVecToStruct(params);
             end
             obj.beta         = params.beta;
