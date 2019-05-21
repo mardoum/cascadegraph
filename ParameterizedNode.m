@@ -6,11 +6,18 @@ classdef ParameterizedNode < ModelNode
     
     methods
         
-        function obj = ParameterizedNode(freeParams, otherParams)  % constructor
-            if nargin > 0
+        function obj = ParameterizedNode(varargin)
+            % Inputs to constructor are optional
+            % Usage: obj = ParameterizedNode(freeParams, otherParams)
+            %   freeParams is a struct or vector with params in order of obj.freeParamNames
+            %   otherParams is a struct
+            assert(nargin < 3, 'Too many input arguments')
+            if nargin > 0 && ~isempty(varargin{1})
+                freeParams = varargin{1};
                 writeFreeParams(obj, freeParams)
             end
             if nargin > 1
+                otherParams = varargin{2};
                 assert(isstruct(otherParams), 'Input non-free params must be in a struct')
                 otherParamNames = fieldnames(otherParams);
                 for ii = 1:length(otherParamNames)
@@ -43,7 +50,7 @@ classdef ParameterizedNode < ModelNode
         function paramStruct = paramVecToStruct(obj, params)
             assert(length(params) == length(obj.freeParamNames), ...
                 'Length of input vector does not equal number of free parameters')
-            for ii = length(params)
+            for ii = 1:length(params)
                 paramStruct.(obj.freeParamNames{ii}) = params(ii);
             end
         end

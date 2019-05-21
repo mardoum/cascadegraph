@@ -1,4 +1,4 @@
-classdef SigmoidNL < ModelNode
+classdef SigmoidNL < ParameterizedNode
 	% cumulative normal density function fit to NL
     
     properties
@@ -8,14 +8,13 @@ classdef SigmoidNL < ModelNode
         epsilon     % shifts all up or down
     end
     
+    properties (Constant)
+        freeParamNames = {'alpha'; 'beta'; 'gamma'; 'epsilon'}
+    end
+    
 	methods
-		function obj = SigmoidNL(alpha, beta, gamma, epsilon)  % constructor
-			if nargin > 0
-				obj.alpha   = alpha;
-                obj.beta    = beta;
-                obj.gamma   = gamma;
-                obj.epsilon = epsilon;
-			end
+		function obj = SigmoidNL(varargin)  % constructor
+            obj@ParameterizedNode(varargin{:});
         end
     end
     
@@ -30,7 +29,7 @@ classdef SigmoidNL < ModelNode
     methods
         
         function out = process(obj, in)
-            params = obj.getParamsVec;
+            params = obj.getFreeParams();
             out = obj.fn(params, in);
         end
         
@@ -57,37 +56,9 @@ classdef SigmoidNL < ModelNode
                 params0 = params;  % next iteration starts at previous returned
             end
             
-            obj.writeParamsToSelf(params);
+            obj.writeFreeParams(params);
         end
         
-        function params = getParamsVec(obj)
-            params = [obj.alpha;
-                      obj.beta;
-                      obj.gamma;
-                      obj.epsilon];
-        end
-        
-        function params = getParamsStruct(obj)
-            params.alpha   = obj.alpha;
-            params.beta    = obj.beta;
-            params.gamma   = obj.gamma;
-            params.epsilon = obj.epsilon;
-        end
-        
-        function writeParamsToSelf(obj, params)
-            if ~isstruct(params)
-                obj.alpha   = params(1);
-                obj.beta    = params(2);
-                obj.gamma   = params(3);
-                obj.epsilon = params(4);
-            else
-                obj.alpha   = params.alpha;
-                obj.beta    = params.beta;
-                obj.gamma   = params.gamma;
-                obj.epsilon = params.epsilon;
-            end
-        end
-
     end
     
     methods (Access = protected)
@@ -97,3 +68,4 @@ classdef SigmoidNL < ModelNode
     end
     
 end
+   

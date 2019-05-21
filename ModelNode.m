@@ -8,13 +8,7 @@ classdef ModelNode < handle
         numUpstream
     end
     
-    methods 
-        
-        function obj = ModelNode(upstream)
-            if nargin > 0
-                obj.upstream = upstream;
-            end
-        end
+    methods
         
         function out = runWithUpstream(obj)
             out = runNodeAndUpstream(obj);
@@ -70,5 +64,5 @@ classdef ModelNode < handle
         returnOutput(in)
         
     end
-    
+ 
 end

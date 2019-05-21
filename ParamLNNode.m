@@ -1,4 +1,4 @@
-classdef ParamLNNode < ModelNode
+classdef ParamLNNode < ParameterizedNode
     
     properties
         % free params
@@ -16,19 +16,20 @@ classdef ParamLNNode < ModelNode
         dt_stored           % time step 
     end
     
+    properties (Constant)
+        freeParamNames = {'numFilt', 'tauR', 'tauD', 'tauP', 'phi', ...
+            'nonlinScale', 'nonlinMean', 'nonlinSD', 'nonlinOffset'};
+    end
+    
     methods
         
-        function obj = ParamLNNode(params)  % constructor
-            if nargin > 0
-                if ~isempty(params)
-                    obj.writeParamsToSelf(params)     % write free params to self
-                end
-            end
+        function obj = ParamLNNode(varargin)  % constructor
+            obj@ParameterizedNode(varargin{:});
         end
 
 		function prediction = process(obj, stim, dt)
             % run with instance properties as parameters
-            params = obj.getFreeParamsStruct();
+            params = obj.getFreeParams('struct');
             assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
             prediction = obj.runWithParams(params, stim, dt);
         end
@@ -36,10 +37,10 @@ classdef ParamLNNode < ModelNode
         function fitParams = optimizeParams(obj, params0, stim, response, dt)            
             fitParams = lsqcurvefit(@tryParams, params0, stim, response);
             function prediction = tryParams(params, stim)
-                pstruct = obj.paramsVecToStruct(params);
+                pstruct = obj.paramVecToStruct(params);
                 prediction = obj.runWithParams(pstruct, stim, dt);
             end
-            obj.writeParamsToSelf(fitParams)
+            obj.writeFreeParams(fitParams)
         end
 
         function prediction = runWithParams(obj, params, stim, dt)
@@ -57,48 +58,6 @@ classdef ParamLNNode < ModelNode
                 normcdf(generator, params.nonlinMean, abs(params.nonlinSD)) + params.nonlinOffset;
         end
         
-        function writeParamsToSelf(obj, params)
-            if ~isstruct(params)
-                params = obj.paramsVecToStruct(params);
-            end
-            obj.numFilt = params.numFilt;
-            obj.tauR    = params.tauR;
-            obj.tauD    = params.tauD;
-            obj.tauP    = params.tauP;
-            obj.phi     = params.phi;
-            obj.nonlinScale  = params.nonlinScale;
-            obj.nonlinMean   = params.nonlinMean;
-            obj.nonlinSD     = params.nonlinSD;
-            obj.nonlinOffset = params.nonlinOffset;
-        end
-        
-        function freeParams = getFreeParamsStruct(obj)
-            % return struct with free parameters stored in instance properties
-            freeParams.numFilt = obj.numFilt;
-            freeParams.tauR    = obj.tauR;
-            freeParams.tauD    = obj.tauD;
-            freeParams.tauP    = obj.tauP;
-            freeParams.phi     = obj.phi;
-            freeParams.nonlinScale  = obj.nonlinScale;
-            freeParams.nonlinMean   = obj.nonlinMean;
-            freeParams.nonlinSD     = obj.nonlinSD;
-            freeParams.nonlinOffset = obj.nonlinOffset;
-        end
-        
-    end
-    
-    methods (Static)
-        function pstruct = paramsVecToStruct(pvec)
-            pstruct.numFilt = pvec(1);
-            pstruct.tauR    = pvec(2);
-            pstruct.tauD    = pvec(3);
-            pstruct.tauP    = pvec(4);
-            pstruct.phi     = pvec(5);
-            pstruct.nonlinScale  = pvec(6);
-            pstruct.nonlinMean   = pvec(7);
-            pstruct.nonlinSD     = pvec(8);
-            pstruct.nonlinOffset = pvec(9);
-        end
     end
     
     methods (Access = protected)

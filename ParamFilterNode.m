@@ -1,4 +1,4 @@
-classdef ParamFilterNode < ModelNode
+classdef ParamFilterNode < ParameterizedNode
     
     properties
         % free params
@@ -12,34 +12,33 @@ classdef ParamFilterNode < ModelNode
         dt_stored           % time step 
     end
     
+    properties (Constant)
+        freeParamNames = {'numFilt', 'tauR', 'tauD', 'tauP', 'phi'};
+    end
+    
     methods
         
-        function obj = ParamFilterNode(params)  % constructor
-            if nargin > 0
-                if ~isempty(params)
-                    obj.writeParamsToSelf(params)     % write free params to self
-                end
-            end
+        function obj = ParamFilterNode(varargin)  % constructor
+            obj@ParameterizedNode(varargin{:});
         end
 
 		function prediction = process(obj, stim, dt)
             % run with instance properties as parameters
-            params = obj.getFreeParamsStruct();
+            params = obj.getFreeParams('struct');
             assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
             prediction = obj.runWithParams(params, stim, dt);
         end
         
-        % must be optimized alongside NL, true?
-%         function fitParams = optimizeParams(obj, params0, stim, response, dt)            
-%             fitParams = lsqcurvefit(@tryParams, params0, stim, response);
-%             function prediction = tryParams(params, stim)
-%                 pstruct = obj.paramsVecToStruct(params);
-%                 prediction = obj.runWithParams(pstruct, stim, dt);
-%             end
-%             obj.writeParamsToSelf(fitParams)
-%         end
+        function fitParams = optimizeParams(obj, params0, stim, response, dt)            
+            fitParams = lsqcurvefit(@tryParams, params0, stim, response);
+            function prediction = tryParams(params, stim)
+                pstruct = obj.paramVecToStruct(params);
+                prediction = obj.runWithParams(pstruct, stim, dt);
+            end
+            obj.writeFreeParams(fitParams)
+        end
 
-        function prediction = runWithParams(obj, params, stim, dt)
+        function prediction = runWithParams(params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if size(stim,1) < size(stim,2)
                 stim = stim';
@@ -51,36 +50,6 @@ classdef ParamFilterNode < ModelNode
             prediction = real(ifft(fft(stim) .* fft(filter)));
         end
         
-        function writeParamsToSelf(obj, params)
-            if ~isstruct(params)
-                params = obj.paramsVecToStruct(params);
-            end
-            obj.numFilt = params.numFilt;
-            obj.tauR    = params.tauR;
-            obj.tauD    = params.tauD;
-            obj.tauP    = params.tauP;
-            obj.phi     = params.phi;
-        end
-        
-        function freeParams = getFreeParamsStruct(obj)
-            % return struct with free parameters stored in instance properties
-            freeParams.numFilt = obj.numFilt;
-            freeParams.tauR    = obj.tauR;
-            freeParams.tauD    = obj.tauD;
-            freeParams.tauP    = obj.tauP;
-            freeParams.phi     = obj.phi;
-        end
-        
-    end
-    
-    methods (Static)
-        function pstruct = paramsVecToStruct(pvec)
-            pstruct.numFilt = pvec(1);
-            pstruct.tauR    = pvec(2);
-            pstruct.tauD    = pvec(3);
-            pstruct.tauP    = pvec(4);
-            pstruct.phi     = pvec(5);
-        end
     end
     
     methods (Access = protected)

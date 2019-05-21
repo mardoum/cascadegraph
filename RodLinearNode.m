@@ -1,4 +1,4 @@
-classdef RodLinearNode < ModelNode
+classdef RodLinearNode < ParameterizedNode
     
     properties
         % free params
@@ -13,21 +13,19 @@ classdef RodLinearNode < ModelNode
         dt_stored           % time step 
     end
     
+    properties (Constant)
+        freeParamNames = {'scFact', 'tauR', 'tauD'};
+    end
+    
     methods
         
-        function obj = RodLinearNode(params, fixed)  % constructor
-            if nargin > 0
-                if ~isempty(params)
-                    obj.writeParamsToSelf(params)     % write free params to self
-                end
-                
-                obj.darkCurrent = fixed.darkCurrent;  % write fixed params to self
-            end
+        function obj = RodLinearNode(varargin)  % constructor
+            obj@ParameterizedNode(varargin{:});
         end
 
 		function prediction = process(obj, stim, dt)
             % run with instance properties as parameters
-            params = obj.getFreeParamsStruct();
+            params = obj.getFreeParams('struct');
             assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
             prediction = obj.runWithParams(params, stim, dt);
         end
@@ -38,11 +36,11 @@ classdef RodLinearNode < ModelNode
             fitParams = lsqcurvefit(@tryParams, params0, stim, response);
             
             function prediction = tryParams(params, stim)
-                pstruct = obj.paramsVecToStruct(params);
+                pstruct = obj.paramVecToStruct(params);
                 prediction = obj.runWithParams(pstruct, stim, dt);
             end
             
-            obj.writeParamsToSelf(fitParams)
+            obj.writeFreeParams(fitParams)
         end
 
         function prediction = runWithParams(obj, params, stim, dt)
@@ -56,30 +54,6 @@ classdef RodLinearNode < ModelNode
             prediction = real(ifft(fft(stim) .* fft(filter))) - obj.darkCurrent;
         end
         
-        function writeParamsToSelf(obj, params)
-            if ~isstruct(params)
-                params = obj.paramsVecToStruct(params);
-            end
-            obj.scFact = params.scFact;
-            obj.tauR   = params.tauR;
-            obj.tauD   = params.tauD;
-        end
-        
-        function freeParams = getFreeParamsStruct(obj)
-            % return struct with free parameters stored in instance properties
-            freeParams.scFact = obj.scFact;
-            freeParams.tauR   = obj.tauR;
-            freeParams.tauD   = obj.tauD;
-        end
-        
-    end
-    
-    methods (Static)
-        function pstruct = paramsVecToStruct(pvec)
-            pstruct.scFact = pvec(1);
-            pstruct.tauR   = pvec(2);
-            pstruct.tauD   = pvec(3);
-        end
     end
     
     methods (Access = protected)
