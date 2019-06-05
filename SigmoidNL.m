@@ -22,6 +22,9 @@ classdef SigmoidNL < ParameterizedNode
         function out = fn(params, xarray)
             % sigmoid nonlinearity parameterized as cumulative normal density function
             % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
+            if isstruct(params)
+                params = obj.paramStructToVec(params);
+            end
             out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
         end
     end

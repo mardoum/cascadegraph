@@ -26,9 +26,31 @@ classdef ParameterizedNode < ModelNode
             end
         end
         
+        function prediction = process(obj, input, dt)
+            % run with instance properties as parameters
+            params = obj.getFreeParams('struct');
+            assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
+            prediction = obj.runWithParams(params, input, dt);
+        end
+        
+        function fitParams = optimizeParams(obj, params0, input, target, dt, options)
+            if nargin > 5
+                fitParams = lsqcurvefit(@tryParams, params0, input, target, [], [], options);
+            else
+                fitParams = lsqcurvefit(@tryParams, params0, input, target);
+            end
+            
+            function prediction = tryParams(params, input)
+                pstruct = obj.paramVecToStruct(params);
+                prediction = obj.runWithParams(pstruct, input, dt);
+            end
+            
+            obj.writeFreeParams(fitParams)
+        end
+        
         function writeFreeParams(obj, params)
             if isstruct(params)
-                params = paramStructToVec(params);
+                params = obj.paramStructToVec(params);
             end
             assert(length(params) == length(obj.freeParamNames), ...
                 'Length of input vector does not equal number of free parameters')

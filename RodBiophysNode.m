@@ -32,29 +32,11 @@ classdef RodBiophysNode < ParameterizedNode
             obj@ParameterizedNode(varargin{:});
         end
 
-		function prediction = process(obj, stim, dt)
-            % run with instance properties as parameters
-            params = obj.getFreeParams('struct');
-            assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
-            prediction = obj.runWithParams(params, stim, dt);
-        end
-        
-        function fitParams = optimizeParams(obj, params0, stim, response, dt)
-            assert(~any(cellfun(@isempty, {obj.betaSlow, obj.hillcoef, obj.darkCurrent})), ...
-                'execution failed because of empty properties');
-            
-            fitParams = lsqcurvefit(@tryParams, params0, stim, response);
-            
-            function prediction = tryParams(params, stim)
-                pstruct = obj.paramVecToStruct(params);
-                prediction = obj.runWithParams(pstruct, stim, dt);
-            end
-            
-            obj.writeFreeParams(fitParams)
-        end
-
         function prediction = runWithParams(obj, params, stim, dt)
             % run with input free params, using instance properties for fixed params
+            if ~isstruct(params)
+                params = obj.paramVecToStruct(params);
+            end
             
             phi = params.sigma;
             gdark = (2 * obj.darkCurrent / obj.cgmp2cur)^(1/obj.cgmphill);  % gdark and cgmp2cur trade with each other to set dark current
@@ -85,12 +67,12 @@ classdef RodBiophysNode < ParameterizedNode
                 I = obj.cgmp2cur * g(ii-1)^obj.cgmphill / (1 + (cslow(ii-1) / obj.cdark));
                 c(ii) = c(ii-1) + dt * (cur2ca * I - params.beta * c(ii-1));
                 s(ii) = smax / (1 + (c(ii) / params.hillaffinity)^obj.hillcoef);
-                cslow(ii) = cslow(ii-1) - dt * (obj.betaSlow * (cslow(ii-1) - c(ii-1)));
+                cslow(ii) = cslow(ii-1) - dt * obj.betaSlow * (cslow(ii-1) - c(ii-1));
             end
 
             % determine current change
             % ios = cgmp2cur * g.^cgmphill * 2 ./ (2 + cslow ./ cdark);
-            prediction = -obj.cgmp2cur * g.^obj.cgmphill * 1 ./ (1 + (cslow ./ obj.cdark));
+            prediction = -obj.cgmp2cur * g.^obj.cgmphill ./ (1 + cslow ./ obj.cdark);
         end
         
     end
