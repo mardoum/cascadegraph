@@ -27,9 +27,15 @@ classdef ParamFilterNode < ParameterizedNode
             out = obj.runWithParams(params, in, dt);
         end
         
+        function filter = getFilter(obj, numPoints, dt)
+            params = obj.getFreeParams('struct');
+            filter = obj.getFilterWithParams(params, numPoints, dt);
+        end
+        
     end
     
     methods (Static)
+        
         function prediction = runWithParams(params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if size(stim,1) < size(stim,2)
@@ -38,16 +44,23 @@ classdef ParamFilterNode < ParameterizedNode
             else
                 transpose = false;
             end
-            t = ((1:length(stim)) * dt)';
-            filter = (((t./params.tauR) .^ params.numFilt) ./ (1 + ((t./params.tauR) .^ params.numFilt))) ...
-                .* exp(-((t./params.tauD))) .* cos(((2.*pi.*t) ./ params.tauP) + (2*pi*params.phi/360));
-%             filter = filter / max(filter);  % from Fred's version
-            filter = filter/max(abs([max(filter) min(filter)]));
+            
+            filter = ParamFilterNode.getFilterWithParams(params, length(stim), dt);
+            
             prediction = real(ifft(fft(stim) .* fft(filter)));
             if transpose
                 prediction = prediction';
             end
         end
+        
+        function filter = getFilterWithParams(params, numPoints, dt)
+            t = ((1:numPoints) * dt)';
+            filter = (((t./abs(params.tauR)) .^ params.numFilt) ./ (1 + ((t./abs(params.tauR)) .^ params.numFilt))) ...
+                .* exp(-((t./params.tauD))) .* cos(((2.*pi.*t) ./ params.tauP) + (2*pi*params.phi/360));
+%             filter = filter / max(filter);  % from Fred's version
+            filter = filter/max(abs([max(filter) min(filter)]));
+        end
+        
     end
     
     methods (Access = protected)

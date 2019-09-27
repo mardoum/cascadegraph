@@ -35,14 +35,16 @@ classdef ParameterizedNode < ModelNode
         
         function fitParams = optimizeParams(obj, params0, input, target, dt, options)
             if nargin > 5
-                fitParams = lsqcurvefit(@tryParams, params0, input, target, [], [], options);
+                fitParams = fminsearch(@tryParams, params0, options);
             else
-                fitParams = lsqcurvefit(@tryParams, params0, input, target);
+                fitParams = fminsearch(@tryParams, params0);
             end
             
-            function prediction = tryParams(params, input)
+            function error = tryParams(params)
                 pstruct = obj.paramVecToStruct(params);
                 prediction = obj.runWithParams(pstruct, input, dt);
+                sqerrors = (target - prediction).^2;
+                error = sum(sqerrors(:));
             end
             
             obj.writeFreeParams(fitParams)
