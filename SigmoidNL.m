@@ -1,5 +1,5 @@
 classdef SigmoidNL < ParameterizedNode
-	% cumulative normal density function fit to NL
+	% Cumulative normal density function fit to NL
     
     properties
 		alpha       % maximum conductance
@@ -19,23 +19,17 @@ classdef SigmoidNL < ParameterizedNode
     end
     
     methods (Static)
-        function out = fn(params, xarray)
+        function out = runWithParams(params, xarray)
             % sigmoid nonlinearity parameterized as cumulative normal density function
             % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
             if isstruct(params)
-                params = obj.paramStructToVec(params);
+                params = [params.alpha; params.beta; params.gamma; params.epsilon];
             end
             out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
         end
     end
     
     methods
-        
-        function out = process(obj, in)
-            params = obj.getFreeParams();
-            out = obj.fn(params, in);
-        end
-        
         function params = optimizeParams(obj, xarray, yarray, params0, lb, ub, options, optimIters)
             narginchk(3,8);  % set defaults
             if nargin < 4
@@ -48,27 +42,27 @@ classdef SigmoidNL < ParameterizedNode
                 ub = [Inf Inf Inf max(yarray(:))];
             end
             if nargin < 7
-                options = optimset('MaxIter', 1500, 'MaxFunEvals', 600*length(params0), 'Display', 'off');
+                options = optimset('MaxIter', 1500, 'MaxFunEvals', 600*length(params0), ...
+                    'Display', 'off');
             end
             if nargin < 8
                 optimIters = 5;
             end
             
             for optimIter = 1:optimIters
-                params = lsqcurvefit(@obj.fn, params0, xarray, yarray, lb, ub, options);
+                params = lsqcurvefit(@obj.runWithParams, params0, xarray, yarray, lb, ub, options);
                 params0 = params;  % next iteration starts at previous returned
             end
             
             obj.writeFreeParams(params);
         end
-        
     end
     
     methods (Access = protected)
         function out = returnOutput(obj, in)
-            out = obj.process(in);
+            validateattributes(in, {'cell'}, {'numel', 1});
+            out = obj.process(in{1});
         end
     end
     
 end
-   

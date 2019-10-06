@@ -79,9 +79,10 @@ classdef RodBiophysNode < ParameterizedNode
     
     methods (Access = protected)
         function out = returnOutput(obj, in)
+            validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
                 'RodBiophysNode.returnOutput() requires dt_stored property to be set')
-            out = obj.process(in, obj.dt_stored);
+            out = obj.process(in{1}, obj.dt_stored);
         end
     end
     

@@ -37,11 +37,10 @@ classdef PolyfitNL < ModelNode
     end
     
     methods (Access = protected)
-        
         function out = returnOutput(obj, in)
-            out = obj.process(in);
+            validateattributes(in, {'cell'}, {'numel', 1});
+            out = obj.process(in{1});
         end
-        
     end
-    
+
 end

@@ -30,7 +30,11 @@ classdef ParameterizedNode < ModelNode
             % run with instance properties as parameters
             params = obj.getFreeParams('struct');
             assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
-            prediction = obj.runWithParams(params, input, dt);
+            if nargin > 2
+                prediction = obj.runWithParams(params, input, dt);
+            else
+                prediction = obj.runWithParams(params, input);
+            end
         end
         
         function fitParams = optimizeParams(obj, params0, input, target, dt, options)

@@ -17,6 +17,7 @@ classdef DataNode < ModelNode
     methods (Access = protected)
         
         function out = returnOutput(obj)
+            assert(obj.upstream.count == 0, 'Terminal node type. DataNode should not have parent');
             out = obj.data;
         end
         

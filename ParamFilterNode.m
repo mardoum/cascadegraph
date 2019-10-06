@@ -22,11 +22,6 @@ classdef ParamFilterNode < ParameterizedNode
             obj@ParameterizedNode(varargin{:});
         end
         
-        function out = process(obj, in, dt)
-            params = obj.getFreeParams('struct');
-            out = obj.runWithParams(params, in, dt);
-        end
-        
         function filter = getFilter(obj, numPoints, dt)
             params = obj.getFreeParams('struct');
             filter = obj.getFilterWithParams(params, numPoints, dt);
@@ -65,9 +60,10 @@ classdef ParamFilterNode < ParameterizedNode
     
     methods (Access = protected)
         function out = returnOutput(obj, in)
+            validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
                 'ParamFilterNode.returnOutput() requires dt_stored property to be set')
-            out = obj.process(in, obj.dt_stored);
+            out = obj.process(in{1}, obj.dt_stored);
         end
     end
     

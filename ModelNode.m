@@ -1,59 +1,36 @@
 classdef ModelNode < handle
     
     properties
-        upstream
-    end
-    
-    properties (Dependent)
-        numUpstream
+        upstream NodeList
     end
     
     methods
         
-        function out = runWithUpstream(obj)
-            out = runNodeAndUpstream(obj);
+        function obj = ModelNode()  % constructor
+            obj.upstream = NodeList();
         end
         
-        function val = get.numUpstream(obj)
-            val = getNumUpstreamOf(obj);
-        end
-        
-        function printWithUpstream(obj)
-            disp('-----------------------------------------');
-            disp('Current and upstream nodes:'); disp(' ')
-            printNodeWithUpstream(obj);
+        function out = processUpstream(obj)
+            out = processParents(obj);
         end
         
     end
     
     methods (Access = protected)
         
-        function out = runNodeAndUpstream(node)
-            if isempty(node.upstream)
+        function out = processParents(node)
+            if node.upstream.count < 1
                 out = node.returnOutput();
             else
-                in = runNodeAndUpstream(node.upstream);
+                in = cell(node.upstream.count, 1);
+                for ii = 1:node.upstream.count
+                    in{ii} = processParents(node.upstream.items{ii});
+                    % if 1x1 cell array, unpack
+                    if (isa(in{ii}, 'cell') && length(in{ii}) == 1) 
+                        in{ii} = in{ii}{1};
+                    end
+                end
                 out = node.returnOutput(in);
-            end
-        end
-        
-        function out = getNumUpstreamOf(node)
-            if isempty(node.upstream)
-                out = 0;
-            else
-                out = 1 + getNumUpstreamOf(node.upstream);
-            end
-        end
-        
-        function printNodeWithUpstream(node)
-            if isempty(node.upstream)
-                disp(node)
-            else
-                printNodeWithUpstream(node.upstream);
-                disp('  |')
-                disp('  |')
-                disp('  V')
-                disp(node)
             end
         end
         
