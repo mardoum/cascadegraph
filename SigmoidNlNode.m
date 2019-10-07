@@ -1,5 +1,5 @@
-classdef SigmoidNL < ParameterizedNode
-	% Cumulative normal density function fit to NL
+classdef SigmoidNlNode < ParameterizedNode
+	% Nonlinear transformation described as cumulative normal density function.
     
     properties
 		alpha       % maximum conductance
@@ -13,23 +13,28 @@ classdef SigmoidNL < ParameterizedNode
     end
     
 	methods
-		function obj = SigmoidNL(varargin)  % constructor
+        
+		function obj = SigmoidNlNode(varargin)
             obj@ParameterizedNode(varargin{:});
         end
+        
     end
     
     methods (Static)
-        function out = runWithParams(params, xarray)
-            % sigmoid nonlinearity parameterized as cumulative normal density function
+        
+        function out = processTempParams(params, xarray)
+            % Sigmoid nonlinearity parameterized as cumulative normal density function
             % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
             if isstruct(params)
                 params = [params.alpha; params.beta; params.gamma; params.epsilon];
             end
             out = params(1) * normcdf(params(2) .* xarray + params(3), 0, 1) + params(4);
         end
+        
     end
     
     methods
+        
         function params = optimizeParams(obj, xarray, yarray, params0, lb, ub, options, optimIters)
             narginchk(3,8);  % set defaults
             if nargin < 4
@@ -50,19 +55,22 @@ classdef SigmoidNL < ParameterizedNode
             end
             
             for optimIter = 1:optimIters
-                params = lsqcurvefit(@obj.runWithParams, params0, xarray, yarray, lb, ub, options);
+                params = lsqcurvefit(@obj.processTempParams, params0, xarray, yarray, lb, ub, options);
                 params0 = params;  % next iteration starts at previous returned
             end
             
             obj.writeFreeParams(params);
         end
+        
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             out = obj.process(in{1});
         end
+        
     end
     
 end

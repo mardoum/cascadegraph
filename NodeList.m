@@ -1,5 +1,8 @@
 classdef NodeList < handle
-    % Modified from Symphony's ArrayList
+    % A NodeList is an ArrayList-like data structure meant to store a list of
+    % ModelNode instances.
+    %
+    % Modified from Symphony's ArrayList.m
    
     properties
         items

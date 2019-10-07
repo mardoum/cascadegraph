@@ -1,9 +1,9 @@
 classdef NegativeNode < ModelNode
     % Multiplies input by -1.
     
-    methods
+    methods (Static)
         
-        function out = process(~, in)
+        function out = process(in)
             out = cellfun(@(x) -x, in, 'UniformOutput', false);
         end
         

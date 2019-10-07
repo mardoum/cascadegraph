@@ -1,4 +1,5 @@
 classdef RodBiophysNode < ParameterizedNode
+    % Biophysical rod model
     
     properties
         % free params
@@ -28,11 +29,11 @@ classdef RodBiophysNode < ParameterizedNode
     
     methods
         
-        function obj = RodBiophysNode(varargin)  % constructor
+        function obj = RodBiophysNode(varargin)
             obj@ParameterizedNode(varargin{:});
         end
 
-        function prediction = runWithParams(obj, params, stim, dt)
+        function prediction = processTempParams(obj, params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if ~isstruct(params)
                 params = obj.paramVecToStruct(params);
@@ -78,12 +79,14 @@ classdef RodBiophysNode < ParameterizedNode
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
                 'RodBiophysNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in{1}, obj.dt_stored);
         end
+        
     end
     
 end

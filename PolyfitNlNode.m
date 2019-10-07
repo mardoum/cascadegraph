@@ -1,4 +1,7 @@
-classdef PolyfitNL < ModelNode
+classdef PolyfitNlNode < ModelNode
+    % Nonlinear transformation described as polynomial evaluation.
+    % Does NOT subclass from ParameterizedNode because parameters are stored as vectors, which is
+    % incompatible with methods in ParameterizedNode.
     
     properties
         coeff
@@ -11,7 +14,7 @@ classdef PolyfitNL < ModelNode
     
     methods
         
-        function obj = PolyfitNL(coeff, mu)  % constructor
+        function obj = PolyfitNlNode(coeff, mu)
             if nargin > 0
                 assert(isvector(coeff) && isvector(mu), ...
                     'error: coeff and mu must be passed to constructor together and must be vectors');

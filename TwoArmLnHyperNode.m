@@ -1,4 +1,6 @@
 classdef TwoArmLnHyperNode < ParameterizedNode
+    % Full two-arm linear-nonlinear cascade model. This 'hypernode' comprises
+    % other nodes.
     
     properties
         % Free params
@@ -28,8 +30,8 @@ classdef TwoArmLnHyperNode < ParameterizedNode
         % component nodes
         filter1 ParamFilterNode
         filter2 ParamFilterNode
-        nonlinearity1 SigmoidNL
-        nonlinearity2 SigmoidNL
+        nonlinearity1 SigmoidNlNode
+        nonlinearity2 SigmoidNlNode
         
         % needed if returnOutput will be called
         dt_stored           % time step 
@@ -53,15 +55,16 @@ classdef TwoArmLnHyperNode < ParameterizedNode
     end
     
     methods
-        function obj = TwoArmLnHyperNode(varargin)  % constructor
+        
+        function obj = TwoArmLnHyperNode(varargin)
             obj@ParameterizedNode(varargin{:});
             
             obj.input = DataNode();
             
             obj.filter1 = ParamFilterNode();
             obj.filter2 = ParamFilterNode();
-            obj.nonlinearity1 = SigmoidNL();
-            obj.nonlinearity2 = SigmoidNL();
+            obj.nonlinearity1 = SigmoidNlNode();
+            obj.nonlinearity2 = SigmoidNlNode();
 %             obj.signFlip = NegativeNode();
             obj.sum = SumNode();
             
@@ -74,10 +77,8 @@ classdef TwoArmLnHyperNode < ParameterizedNode
             obj.sum.upstream.add(obj.nonlinearity2); %%%
             obj.nonlinearity1.upstream.add(obj.sum);
         end
-    end
-    
-    methods
-        function prediction = runWithParams(obj, params, stim, dt)
+        
+        function prediction = processTempParams(obj, params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if size(stim,1) < size(stim,2)
                 stim = stim';
@@ -104,15 +105,18 @@ classdef TwoArmLnHyperNode < ParameterizedNode
                 prediction = prediction';
             end
         end
+        
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
                 'ParamFilterNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in{1}, obj.dt_stored);
         end
+        
     end
     
 end

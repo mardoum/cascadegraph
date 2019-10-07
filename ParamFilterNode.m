@@ -1,4 +1,5 @@
 classdef ParamFilterNode < ParameterizedNode
+    % Parameterized temporal filter
     
     properties
         % free params
@@ -18,7 +19,7 @@ classdef ParamFilterNode < ParameterizedNode
     
     methods
         
-        function obj = ParamFilterNode(varargin)  % constructor
+        function obj = ParamFilterNode(varargin)
             obj@ParameterizedNode(varargin{:});
         end
         
@@ -31,7 +32,7 @@ classdef ParamFilterNode < ParameterizedNode
     
     methods (Static)
         
-        function prediction = runWithParams(params, stim, dt)
+        function prediction = processTempParams(params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if size(stim,1) < size(stim,2)
                 stim = stim';
@@ -59,12 +60,14 @@ classdef ParamFilterNode < ParameterizedNode
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
                 'ParamFilterNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in{1}, obj.dt_stored);
         end
+        
     end
     
 end

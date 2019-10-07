@@ -1,8 +1,9 @@
 classdef SumNode < ModelNode
+    % A SumNode adds its inputs.
     
-    methods
+    methods (Static)
         
-        function out = process(~, in)
+        function out = process(in)
             sum = in{1};
             if length(in) > 1
                 for ii = 2:length(in)

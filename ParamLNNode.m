@@ -1,4 +1,4 @@
-classdef ParamLNNode < ParameterizedNode
+classdef ParamLnNode < ParameterizedNode
     
     properties
         % free params
@@ -22,13 +22,16 @@ classdef ParamLNNode < ParameterizedNode
     end
     
     methods
-        function obj = ParamLNNode(varargin)  % constructor
+        
+        function obj = ParamLnNode(varargin)
             obj@ParameterizedNode(varargin{:});
         end
+        
     end
     
     methods (Static)
-        function prediction = runWithParams(params, stim, dt)
+        
+        function prediction = processTempParams(params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if size(stim,1) < size(stim,2)
                 stim = stim';
@@ -51,14 +54,17 @@ classdef ParamLNNode < ParameterizedNode
                 prediction = prediction';
             end
         end
+        
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             assert(~isempty(obj.dt_stored), ...
                 'ParamFilterNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in, obj.dt_stored);
         end
+        
     end
     
 end

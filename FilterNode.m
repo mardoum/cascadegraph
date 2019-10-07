@@ -1,13 +1,14 @@
 classdef FilterNode < ModelNode
+    % Temporal filter
     
     properties
-        filter
-        hasAnticausalHalf
+        filter              % represented in time domain
+        hasAnticausalHalf   % boolean: filter includes both sides of time = 0
     end
     
     methods
         
-        function obj = FilterNode(filter, hasAnticausalHalf)  % constructor
+        function obj = FilterNode(filter, hasAnticausalHalf)
             if nargin > 0
                 assert(isvector(filter) && ismember(hasAnticausalHalf,[0,1]), ...
                     'error: filter and hasAnticausalHalf must be passed to constructor together');

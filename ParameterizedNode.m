@@ -1,4 +1,14 @@
-classdef ParameterizedNode < ModelNode
+classdef (Abstract) ParameterizedNode < ModelNode
+    % A ParameterizedNode is a ModelNode whose methods require that one or more
+    % parameters be defined. The ParameterizedNode class is abstract and
+    % contains methods used to manage and optimize free parameters. 
+    %
+    % Subclasses of ParameterizedNode must:
+    %   - store each free parameter as a property 
+    %   - define a list of names of free parameters (called freeParamNames). 
+    %   - define a method to process external inputs using input parameters
+    %     (called processTempParams(params, input)). These parameters need not
+    %     match the parameters stored by a node instance as properties.
     
     properties (Abstract, Constant)
         freeParamNames  % list of free parameter property names
@@ -27,13 +37,14 @@ classdef ParameterizedNode < ModelNode
         end
         
         function prediction = process(obj, input, dt)
-            % run with instance properties as parameters
+            % Process input using parameters stored as instance properties
             params = obj.getFreeParams('struct');
-            assert(~any(structfun(@isempty, params)), 'execution failed because of empty properties')
+            assert(~any(structfun(@isempty, params)), ...
+                'Execution failed because of empty properties')
             if nargin > 2
-                prediction = obj.runWithParams(params, input, dt);
+                prediction = obj.processTempParams(params, input, dt);
             else
-                prediction = obj.runWithParams(params, input);
+                prediction = obj.processTempParams(params, input);
             end
         end
         
@@ -46,7 +57,7 @@ classdef ParameterizedNode < ModelNode
             
             function error = tryParams(params)
                 pstruct = obj.paramVecToStruct(params);
-                prediction = obj.runWithParams(pstruct, input, dt);
+                prediction = obj.processTempParams(pstruct, input, dt);
                 sqerrors = (target - prediction).^2;
                 error = sum(sqerrors(:));
             end
@@ -91,6 +102,12 @@ classdef ParameterizedNode < ModelNode
                 paramVec(ii) = params.(obj.freeParamNames{ii});
             end
         end
+        
+    end
+    
+    methods (Abstract)
+        
+        processTempParams(params, input)
         
     end
     

@@ -1,4 +1,5 @@
 classdef RodLinearNode < ParameterizedNode
+    % Linear rod model
     
     properties
         % free params
@@ -19,11 +20,11 @@ classdef RodLinearNode < ParameterizedNode
     
     methods
         
-        function obj = RodLinearNode(varargin)  % constructor
+        function obj = RodLinearNode(varargin)
             obj@ParameterizedNode(varargin{:});
         end
 
-        function prediction = runWithParams(obj, params, stim, dt)
+        function prediction = processTempParams(obj, params, stim, dt)
             % run with input free params, using instance properties for fixed params
             if size(stim,1) < size(stim,2)
                 stim = stim';
@@ -37,11 +38,13 @@ classdef RodLinearNode < ParameterizedNode
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             assert(~isempty(obj.dt_stored), ...
                 'RodLinearNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in, obj.dt_stored);
         end
+        
     end
     
 end
