@@ -1,4 +1,4 @@
-classdef LnHyperNode < ParameterizedNode
+classdef LnHyperNode < HyperNode
     % Full linear-nonlinear cascade model. This 'hypernode' comprises other
     % nodes.
     
@@ -16,17 +16,8 @@ classdef LnHyperNode < ParameterizedNode
         gamma               % determines threshold/shoulder location
         epsilon             % shifts all up or down
         
-        % component nodes
-        filter ParamFilterNode
-        nonlinearity SigmoidNlNode
-        
         % needed if returnOutput will be called
         dt_stored           % time step 
-    end
-    
-    properties (Access = private)        
-        % For convenience relaying input to component nodes 
-        input DataNode
     end
     
     properties (Constant)
@@ -37,16 +28,18 @@ classdef LnHyperNode < ParameterizedNode
     methods
         
         function obj = LnHyperNode(varargin)
-            obj@ParameterizedNode(varargin{:});
-            
-            obj.input = DataNode();
-            obj.filter = ParamFilterNode();
-            obj.nonlinearity = SigmoidNlNode();
-            
-            obj.filter.upstream.add(obj.input);
-            obj.nonlinearity.upstream.add(obj.filter);
+            obj@HyperNode(varargin{:});
         end
-    
+        
+        function nodeStruct = constructGraph(obj)
+            nodeStruct.input = DataNode();
+            nodeStruct.filter = ParamFilterNode([obj.numFilt; obj.tauR; obj.tauD; obj.tauP; obj.phi]);
+            nodeStruct.nonlinearity = SigmoidNlNode([obj.alpha; obj.beta; obj.gamma; obj.epsilon]);
+            
+            nodeStruct.filter.upstream.add(nodeStruct.input);
+            nodeStruct.nonlinearity.upstream.add(nodeStruct.filter);
+        end
+        
         function prediction = processTempParams(obj, params, stim, dt)
             if size(stim,1) < size(stim,2)
                 stim = stim';
@@ -54,15 +47,15 @@ classdef LnHyperNode < ParameterizedNode
             else
                 transpose = false;
             end
-            obj.input.data = stim;
-            obj.filter.dt_stored = dt;
+            obj.subnodesProtected.input.data = stim;
+            obj.subnodesProtected.filter.dt_stored = dt;
             
-            obj.filter.writeFreeParams(...
+            obj.subnodesProtected.filter.writeFreeParams(...
                 [params.numFilt; params.tauR; params.tauD; params.tauP; params.phi]);
-            obj.nonlinearity.writeFreeParams(...
+            obj.subnodesProtected.nonlinearity.writeFreeParams(...
                 [params.alpha; params.beta; params.gamma; params.epsilon]);
             
-            prediction = obj.nonlinearity.processUpstream();
+            prediction = obj.subnodesProtected.nonlinearity.processUpstream();
             
             if transpose
                 prediction = prediction';

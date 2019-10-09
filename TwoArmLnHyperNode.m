@@ -1,4 +1,4 @@
-classdef TwoArmLnHyperNode < ParameterizedNode
+classdef TwoArmLnHyperNode < HyperNode
     % Full two-arm linear-nonlinear cascade model. This 'hypernode' comprises
     % other nodes.
     
@@ -27,23 +27,8 @@ classdef TwoArmLnHyperNode < ParameterizedNode
         gamma2
         epsilon2
         
-        % component nodes
-        filter1 ParamFilterNode
-        filter2 ParamFilterNode
-        nonlinearity1 SigmoidNlNode
-        nonlinearity2 SigmoidNlNode
-        
         % needed if returnOutput will be called
         dt_stored           % time step 
-    end
-    
-    properties (Access = private)        
-        % hidden component nodes
-%         signFlip NegativeNode
-        sum SumNode
-        
-        % For convenience relaying input to component nodes 
-        input DataNode
     end
     
     properties (Constant)
@@ -57,25 +42,27 @@ classdef TwoArmLnHyperNode < ParameterizedNode
     methods
         
         function obj = TwoArmLnHyperNode(varargin)
-            obj@ParameterizedNode(varargin{:});
+            obj@HyperNode(varargin{:});
+        end
+        
+        function nodeStruct = constructGraph(obj)
+            nodeStruct.input = DataNode();
+            nodeStruct.filter1 = ParamFilterNode(...
+                [obj.numFilt1; obj.tauR1; obj.tauD1; obj.tauP1; obj.phi1]);
+            nodeStruct.filter2 = ParamFilterNode(...
+                [obj.numFilt2; obj.tauR2; obj.tauD2; obj.tauP2; obj.phi2]);
+            nodeStruct.nonlinearity1 = SigmoidNlNode(...
+                [obj.alpha1; obj.beta1; obj.gamma1; obj.epsilon1]);
+            nodeStruct.nonlinearity2 = SigmoidNlNode(...
+                [obj.alpha2; obj.beta2; obj.gamma2; obj.epsilon2]);
+            nodeStruct.sum = SumNode();
             
-            obj.input = DataNode();
-            
-            obj.filter1 = ParamFilterNode();
-            obj.filter2 = ParamFilterNode();
-            obj.nonlinearity1 = SigmoidNlNode();
-            obj.nonlinearity2 = SigmoidNlNode();
-%             obj.signFlip = NegativeNode();
-            obj.sum = SumNode();
-            
-            obj.filter1.upstream.add(obj.input);
-            obj.filter2.upstream.add(obj.input);
-            obj.nonlinearity2.upstream.add(obj.filter2);
-%             obj.signFlip.upstream.add(obj.nonlinearity2);
-            obj.sum.upstream.add(obj.filter1);
-%             obj.sum.upstream.add(obj.signFlip);
-            obj.sum.upstream.add(obj.nonlinearity2); %%%
-            obj.nonlinearity1.upstream.add(obj.sum);
+            nodeStruct.filter1.upstream.add(nodeStruct.input);
+            nodeStruct.filter2.upstream.add(nodeStruct.input);
+            nodeStruct.nonlinearity2.upstream.add(nodeStruct.filter2);
+            nodeStruct.sum.upstream.add(nodeStruct.filter1);
+            nodeStruct.sum.upstream.add(nodeStruct.nonlinearity2);
+            nodeStruct.nonlinearity1.upstream.add(nodeStruct.sum);
         end
         
         function prediction = processTempParams(obj, params, stim, dt)
@@ -86,20 +73,20 @@ classdef TwoArmLnHyperNode < ParameterizedNode
             else
                 transpose = false;
             end
-            obj.input.data = stim;
-            obj.filter1.dt_stored = dt;
-            obj.filter2.dt_stored = dt;
+            obj.subnodesProtected.input.data = stim;
+            obj.subnodesProtected.filter1.dt_stored = dt;
+            obj.subnodesProtected.filter2.dt_stored = dt;
             
-            obj.filter1.writeFreeParams(...
+            obj.subnodesProtected.filter1.writeFreeParams(...
                 [params.numFilt1; params.tauR1; params.tauD1; params.tauP1; params.phi1]);
-            obj.filter2.writeFreeParams(...
+            obj.subnodesProtected.filter2.writeFreeParams(...
                 [params.numFilt2; params.tauR2; params.tauD2; params.tauP2; params.phi2]);
-            obj.nonlinearity1.writeFreeParams(...
+            obj.subnodesProtected.nonlinearity1.writeFreeParams(...
                 [params.alpha1; params.beta1; params.gamma1; params.epsilon1]);
-            obj.nonlinearity2.writeFreeParams(...
+            obj.subnodesProtected.nonlinearity2.writeFreeParams(...
                 [params.alpha2; params.beta2; params.gamma2; params.epsilon2]);
             
-            prediction = obj.nonlinearity1.processUpstream();
+            prediction = obj.subnodesProtected.nonlinearity1.processUpstream();
             
             if transpose
                 prediction = prediction';
