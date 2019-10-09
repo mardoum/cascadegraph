@@ -1,5 +1,5 @@
 classdef SumNode < ModelNode
-    % A SumNode adds its inputs.
+    % A SumNode sums its inputs.
     
     methods (Static)
         

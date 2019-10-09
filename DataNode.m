@@ -1,6 +1,5 @@
 classdef DataNode < ModelNode
-    % A DataNode stores data in the computation graph and returns the data
-    % unaltered when queried.
+    % A DataNode returns stored data when queried.
     
     properties
         data

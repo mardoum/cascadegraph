@@ -3,7 +3,7 @@ classdef (Abstract) ParameterizedNode < ModelNode
     % parameters be defined. The ParameterizedNode class is abstract and
     % contains methods used to manage and optimize free parameters. 
     %
-    % Subclasses of ParameterizedNode must:
+    % A subclass of ParameterizedNode must:
     %   - store each free parameter as a property 
     %   - define a list of names of free parameters (called freeParamNames). 
     %   - define a method to process external inputs using input parameters
@@ -19,8 +19,9 @@ classdef (Abstract) ParameterizedNode < ModelNode
         function obj = ParameterizedNode(varargin)
             % Inputs to constructor are optional
             % Usage: obj = ParameterizedNode(freeParams, otherParams)
-            %   freeParams is a struct or vector with params in order of obj.freeParamNames
-            %   otherParams is a struct
+            %   - freeParams is a struct or vector with params in order of
+            %     obj.freeParamNames
+            %   - otherParams is a struct
             assert(nargin < 3, 'Too many input arguments')
             if nargin > 0 && ~isempty(varargin{1})
                 freeParams = varargin{1};

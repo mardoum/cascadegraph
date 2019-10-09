@@ -1,5 +1,5 @@
 classdef SigmoidNlNode < ParameterizedNode
-	% Nonlinear transformation described as cumulative normal density function.
+	% Nonlinearity described as cumulative normal density function.
     
     properties
 		alpha       % maximum conductance
@@ -36,7 +36,8 @@ classdef SigmoidNlNode < ParameterizedNode
     methods
         
         function params = optimizeParams(obj, xarray, yarray, params0, lb, ub, options, optimIters)
-            narginchk(3,8);  % set defaults
+            % Set defaults
+            narginchk(3,8);
             if nargin < 4
                 params0 = [2*max(yarray), 0.1, -1, -1]';
             end

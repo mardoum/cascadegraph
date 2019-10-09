@@ -45,7 +45,8 @@ classdef TwoArmLnHyperNode < HyperNode
             obj@HyperNode(varargin{:});
         end
         
-        function nodeStruct = constructGraph(obj)
+        function nodeStruct = subnodes(obj)
+            % Initialize nodes
             nodeStruct.input = DataNode();
             nodeStruct.filter1 = ParamFilterNode(...
                 [obj.numFilt1; obj.tauR1; obj.tauD1; obj.tauP1; obj.phi1]);
@@ -57,6 +58,7 @@ classdef TwoArmLnHyperNode < HyperNode
                 [obj.alpha2; obj.beta2; obj.gamma2; obj.epsilon2]);
             nodeStruct.sum = SumNode();
             
+            % Construct graph
             nodeStruct.filter1.upstream.add(nodeStruct.input);
             nodeStruct.filter2.upstream.add(nodeStruct.input);
             nodeStruct.nonlinearity2.upstream.add(nodeStruct.filter2);

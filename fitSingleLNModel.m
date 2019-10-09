@@ -1,6 +1,6 @@
 %% LN modeling test Main
-clear; close all;
-addpath('/Users/pmardoum/Desktop/LN_modeling_Adree/');
+clear; %close all;
+addpath('/Users/pmardoum/Desktop/Store/LN_modeling_Adree/');
 
 %% set params
 
@@ -35,13 +35,13 @@ stimComplete = S.BlueStimuliExc;
 responseComplete = applyFrequencyCutoff(responseComplete, p.frequencyCutoff, p.samplingInterval);
 responseComplete = baselineSubtract(responseComplete, p.prePts);
 
-response = trimPreAndTailPts(responseComplete, p.prePts, p.stimPts);
-stim = trimPreAndTailPts(stimComplete, p.prePts, p.stimPts);
+% Trim pre and tail points
+response = responseComplete(:, p.prePts+1:p.prePts+p.stimPts);
+stim = stimComplete(:, p.prePts+1:p.prePts+p.stimPts);
 
 clear S responseComplete stimComplete
 
-
-%% get filter and sample NL function
+%% compute filter
 [filterCausal, filterAnticausal] = getFilter(stim, response, p.filterPts, ...
     p.correctStimPower, p.frequencyCutoff, p.samplingInterval);
 
@@ -53,66 +53,84 @@ end
 filter = filter/max(abs(filter));
 clear filterCausal filterAnticausal
 
+%% Compute model prediction (without computation graph)
 generatorSignal = convolveFilterWithStim(filter, stim, p.useAnticausal);
 
 [nlX, nlY] = getRawNL(generatorSignal, response, p.numBins, p.binningType); 
 
-
-
-%% fit NL and get prediction (with user-defined class)
-
-dataNode = DataNode(stim);
-filterNode = FilterNode(filter, p.useAnticausal);
-
-polyfitNlNode = PolyfitNL();
-polyfitNlNode.optimizeParams(nlX, nlY, p.polyFitDegree);
-
-sigNlNode = SigmoidNL();
-sigNlNode.optimizeParams(nlX, nlY);
-
-filterNode.upstream = dataNode;
-polyfitNlNode.upstream = filterNode;
-sigNlNode.upstream = filterNode;
-
-predPoly = polyfitNlNode.runWithUpstream();
-predSig = sigNlNode.runWithUpstream();
-
-figure; hold on; plot(predPoly(1,:)); plot(predSig(1,:));
-
-rSquaredAllPoly = getVarExplained(reshape(predPoly',1,[]), reshape(response',1,[]))
-rSquaredAllSig  = getVarExplained(reshape(predSig',1,[]), reshape(response',1,[]))
-
-
-
-%% fit NL and get prediction (without user-defined class)
-
 [fitNL.coeff, ~, fitNL.mu] = polyfit(nlX, nlY, p.polyFitDegree);
 prediction = getPrediction(filter, stim, @polyval, fitNL, p.useAnticausal);
 
-%% evaluate performance
+% Evaluate performance
 rSquared = getVarExplained(prediction, response);
-
 rSquaredAll = getVarExplained(reshape(prediction',1,[]), reshape(response',1,[]));
+disp(['Overall R^2: ' num2str(rSquaredAll) '   Mean R^2: ' num2str(mean(rSquared))])
 
-
-%% plot
-evalPoly = polyval(fitNL.coeff, nlX, [], fitNL.mu);
-
+% Plot
 figure; subplot(2,2,1); plot(filter);
 xlabel('time'); ylabel('amp');
 
 subplot(2,2,3); plot(nlX, nlY, 'bo');
-hold on; plot(nlX, evalPoly);
+hold on; plot(nlX, polyval(fitNL.coeff, nlX, [], fitNL.mu));
 xlabel('generator signal'); ylabel('data');
 
 subplot(2,2,2); plot(rSquared, 'bo');
 hold on; plot(mean(rSquared) .* ones(1,length(rSquared)));
 xlabel('epoch'); ylabel('r^2 value');
 
-disp(['Overall R^2: ' num2str(rSquaredAll) '   Mean R^2: ' num2str(mean(rSquared))])
+%% Compute model prediction (with computation graph), compare with alternate model
 
+dataNodeInstance = DataNode(stim);
+filterNodeInstance = FilterNode(filter, p.useAnticausal);
+filterNodeInstance.upstream.add(dataNodeInstance);
 
-%%
+polyfitNlNodeInstance = PolyfitNlNode();
+polyfitNlNodeInstance.optimizeParams(nlX, nlY, p.polyFitDegree);
+polyfitNlNodeInstance.upstream.add(filterNodeInstance);
+
+predictionPolyfitNl = polyfitNlNodeInstance.processUpstream();
+
+% Try sigmoidal nonlinearity
+sigmoidNlNodeInstance = SigmoidNlNode();
+sigmoidNlNodeInstance.optimizeParams(nlX, nlY);
+sigmoidNlNodeInstance.upstream.add(filterNodeInstance);
+
+predictionSigmoidNl = sigmoidNlNodeInstance.processUpstream();
+
+% Evaluate performance
+rSquaredPoly = getVarExplained(predictionPolyfitNl, response);
+rSquaredSig = getVarExplained(predictionSigmoidNl, response);
+rSquaredAllPoly = getVarExplained(reshape(predictionPolyfitNl',1,[]), reshape(response',1,[]));
+rSquaredAllSig  = getVarExplained(reshape(predictionSigmoidNl',1,[]), reshape(response',1,[]));
+disp(['PolyFit - Overall R^2: ' num2str(rSquaredAllPoly) '   Mean R^2: ' num2str(mean(rSquaredPoly))])
+disp(['Sigmoid - Overall R^2: ' num2str(rSquaredAllSig) '   Mean R^2: ' num2str(mean(rSquaredSig))])
+
+% Plot
+figure; subplot(2,2,1); plot(filter);
+xlabel('time'); ylabel('amp');
+
+subplot(2,2,3); hold on;
+plot(nlX, nlY, 'ko');
+plot(nlX, polyfitNlNodeInstance.process(nlX));
+plot(nlX, sigmoidNlNodeInstance.process(nlX));
+xlabel('generator signal'); ylabel('data');
+
+subplot(2,2,4); hold on;
+
+subplot(2,2,2); hold on;
+plot(rSquaredPoly, 'bo');
+plot(rSquaredSig, 'ro');
+plot(mean(rSquaredPoly) .* ones(1,length(rSquaredPoly)), 'b');
+plot(mean(rSquaredSig) .* ones(1,length(rSquaredSig)), 'r');
+xlabel('epoch'); ylabel('r^2 value');
+legend('polyfit NL','sigmoid NL');
+
+figure; hold on; 
+plot(predictionPolyfitNl(1,:)); 
+plot(predictionSigmoidNl(1,:));
+
+%% old snippets
+
 % figure; hold on;
 % window = 1:50000;
 % plot(response(1,window), 'linewidth', 2);

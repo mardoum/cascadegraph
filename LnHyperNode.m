@@ -31,11 +31,13 @@ classdef LnHyperNode < HyperNode
             obj@HyperNode(varargin{:});
         end
         
-        function nodeStruct = constructGraph(obj)
+        function nodeStruct = subnodes(obj)
+            % Initialize nodes
             nodeStruct.input = DataNode();
             nodeStruct.filter = ParamFilterNode([obj.numFilt; obj.tauR; obj.tauD; obj.tauP; obj.phi]);
             nodeStruct.nonlinearity = SigmoidNlNode([obj.alpha; obj.beta; obj.gamma; obj.epsilon]);
             
+            % Construct graph
             nodeStruct.filter.upstream.add(nodeStruct.input);
             nodeStruct.nonlinearity.upstream.add(nodeStruct.filter);
         end

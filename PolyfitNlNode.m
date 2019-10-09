@@ -1,7 +1,8 @@
 classdef PolyfitNlNode < ModelNode
-    % Nonlinear transformation described as polynomial evaluation.
-    % Does NOT subclass from ParameterizedNode because parameters are stored as vectors, which is
-    % incompatible with methods in ParameterizedNode.
+    % Nonlinearity described as polynomial evaluation.
+    %
+    % Does not subclass from ParameterizedNode because parameters are stored as
+    % vectors, which causes incompatibilities with methods in ParameterizedNode.
     
     properties
         coeff
