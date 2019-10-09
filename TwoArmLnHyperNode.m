@@ -102,7 +102,7 @@ classdef TwoArmLnHyperNode < HyperNode
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
-                'ParamFilterNode.returnOutput() requires dt_stored property to be set')
+                'TwoArmLnHyperNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in{1}, obj.dt_stored);
         end
         

@@ -27,7 +27,8 @@ classdef (Abstract) ModelNode < handle
     methods (Access = protected)
         
         function out = processParents(node)
-            if node.upstream.count < 1
+            % Recursive method to traverse computation graph
+            if node.upstream.count <= 0
                 out = node.returnOutput();
             else
                 in = cell(node.upstream.count, 1);

@@ -1,7 +1,10 @@
-%% LN modeling test Main
+%% Example LN models
 clear; close all;
 
 %% Set params
+
+packagePath = '/Users/pmardoum/Dropbox/Scripts/cascade_pack';
+addpath([packagePath '/util']);
 
 p.dataFile = '/Users/pmardoum/Desktop/Store/LN_modeling_Adree/041317Ac3.mat';
 
@@ -133,4 +136,71 @@ plot(predictionSigmoidNl(1,:));
 %% Jointly fit parameterized filter and nonlinearity
 clearvars -except stim response p
 
+% Subsample to speed optimization
+DECIMATE_INTERVAL = 10;
 
+response = decimateMatrix(response, DECIMATE_INTERVAL);
+stim = decimateMatrix(stim, DECIMATE_INTERVAL);
+dt = p.samplingInterval * DECIMATE_INTERVAL;
+
+stimNode = DataNode(stim);
+model = LnHyperNode();
+model.upstream.add(stimNode);
+model.dt_stored = dt;
+
+% Initialize LnHyperNode params
+p0 = [8.5192
+    2.0558
+    0.0048
+    1.1097
+  615.3925
+       770
+     0.002
+       0.6
+      -600];
+
+optimIters = 5;
+for ii = 1:optimIters
+    model.optimizeParams(p0, stim, response, dt);
+    p0 = model.getFreeParams;
+    
+    % Compute prediction
+    prediction = model.processUpstream();
+    
+    rSquaredAll = computeVarianceExplained(reshape(prediction',1,[]), reshape(response',1,[]));
+    disp(['param LN iter ' num2str(ii) ' R^2: ' num2str(rSquaredAll)])
+end
+
+% Evaluate and visualize
+t = ((1:p.filterPts/DECIMATE_INTERVAL) * dt)';
+figure; 
+plot(t, model.subnodes.filter.getFilter(p.filterPts/DECIMATE_INTERVAL, dt), 'linewidth', 2);
+
+generatorSignal = model.subnodes.filter.process(stimNode.data, dt);
+[nlX, nlY] = sampleNl(generatorSignal, response, p.numBins, p.binningType);
+
+figure; hold on;
+plot(nlX, model.subnodes.nonlinearity.process(nlX), 'linewidth', 2);
+plot(nlX, nlY, '.');
+
+%% local functions
+
+function decimated = decimateMatrix(data, factor)
+% decimate(vector, factor) for every vector in input matrix.  Return matrix with result. Decimate
+% operates along whichever dimension is longer.
+if size(data, 2) > size(data, 1)
+    data = data';
+    transpose = true;
+else
+    transpose = false;
+end
+numVecs = size(data,2);
+tempCell = cell(0);
+for ii = 1:numVecs
+    tempCell{ii} = decimate(data(:,ii), factor);
+end
+decimated = horzcat(tempCell{:});
+if transpose
+    decimated = decimated';
+end
+end

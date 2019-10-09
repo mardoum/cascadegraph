@@ -66,35 +66,12 @@ classdef LnHyperNode < HyperNode
         
     end
     
-    methods (Static)
-        
-        function prediction = processTempParamsStatic(params, stim, dt)
-            % run with input free params, using instance properties for fixed params
-            if size(stim,1) < size(stim,2)
-                stim = stim';
-                transpose = true;
-            else
-                transpose = false;
-            end
-            
-            filter = ParamFilterNode.getFilterWithParams(params, length(stim), dt);
-            generator = real(ifft(fft(stim) .* fft(filter)));
-            prediction = SigmoidNlNode.processTempParams(...
-                [params.alpha params.beta params.gamma params.epsilon], generator);
-            
-            if transpose
-                prediction = prediction';
-            end
-        end
-        
-    end
-    
     methods (Access = protected)
         
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             assert(~isempty(obj.dt_stored), ...
-                'ParamFilterNode.returnOutput() requires dt_stored property to be set')
+                'LnHyperNode.returnOutput() requires dt_stored property to be set')
             out = obj.process(in{1}, obj.dt_stored);
         end
         
