@@ -24,6 +24,7 @@ assert(ismember(nargin, [3, 4, 6]), ...
 
 stimFFT = fft(stim, [], 2);
 respFFT = fft(response, [], 2);
+
 filterFFT = mean(respFFT .* conj(stimFFT), 1);
 
 % normalize by stimulus power
