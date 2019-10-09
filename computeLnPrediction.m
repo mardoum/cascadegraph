@@ -1,5 +1,8 @@
-function prediction = getPrediction(filter, stim, nlFn, fnParams, filterHasAnticausalHalf)
-% Computes predicted responses given stimuli, linear filter, and nonlinear function.
+function prediction = computeLnPrediction(...
+    filter, stim, nlFn, fnParams, filterHasAnticausalHalf)
+% Computes predicted responses given stimuli, linear filter, and nonlinear
+% function.
+%
 % Input:
 %   filter    - vector containing the linear filter
 %   stim      - matrix of row vectors containing stimuli

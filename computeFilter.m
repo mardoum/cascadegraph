@@ -1,7 +1,8 @@
-function [filterCausal, filterAnticausal] = getFilter(stim, response, filterPts, ...
+function [filterCausal, filterAnticausal] = computeFilter(stim, response, filterPts, ...
     correctStimPower, frequencyCutoff, samplingInterval)
 % Computes filter that predicts response given stimulus. This is the cross-correlation between
 % stimulus and response.
+%
 % Input:
 %   stim       - matrix of row vectors
 %   response   - matrix of row vectors
