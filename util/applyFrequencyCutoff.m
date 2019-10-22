@@ -5,8 +5,6 @@ function out = applyFrequencyCutoff(original, freqCutoff, samplingInterval)
 %   freqCutoff        - cutoff frequency (Hz)
 %   samplingInterval  - (s)
 
-assert(size(original,1) < size(original,2), 'Incompatible matrix or vector orientation')
-
 fftOriginal = fft(original, [], 2);
 fftCutoff = applyFrequencyCutoffToFFT(fftOriginal, freqCutoff, samplingInterval);
 out = real(ifft(fftCutoff, [], 2));

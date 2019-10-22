@@ -1,9 +1,9 @@
 classdef FilterNode < ModelNode
-    % Temporal filter
+    % Temporal filter described by vector in time domain.
     
     properties
-        filter              % represented in time domain
-        hasAnticausalHalf   % boolean: filter includes both sides of time = 0
+        filter              % vector in time domain
+        hasAnticausalHalf   % boolean, true if filter contains structure on both sides of t=0.
     end
     
     methods

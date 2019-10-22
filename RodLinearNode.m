@@ -1,13 +1,13 @@
 classdef RodLinearNode < ParameterizedNode
-    % Linear rod model
+    % Linear model of rod photoreceptor.
     
     properties
-        % free params
+        % Free params
         scFact              % Scaling Factor
         tauR                % Rising Phase Time Constant
         tauD                % Dampening Time Constant
         
-        % fixed params
+        % Fixed params
         darkCurrent
         
         % needed if returnOutput will be called during recursive traversal of node chain
@@ -25,7 +25,7 @@ classdef RodLinearNode < ParameterizedNode
         end
 
         function prediction = processTempParams(obj, params, stim, dt)
-            % run with input free params, using instance properties for fixed params
+            % Use input free params and stored fixed params
             if size(stim,1) < size(stim,2)
                 stim = stim';
             end

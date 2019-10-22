@@ -1,6 +1,5 @@
 classdef LnHyperNode < HyperNode
-    % Full linear-nonlinear cascade model. This 'hypernode' comprises other
-    % nodes.
+    % Full linear-nonlinear cascade model. This HyperNode comprises other nodes.
     
     properties
         % Free params

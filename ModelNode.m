@@ -1,11 +1,15 @@
 classdef (Abstract) ModelNode < handle
     % A ModelNode is a node in a directed computation graph. The ModelNode class
     % is abstract and contains methods used to recursively traverse the
-    % computation graph. 
+    % computation graph. Every ModelNode stores a list, called upstream, of
+    % incoming neighbor nodes (this list can be empty).
     %
-    % A ModelNode graph should be acyclic. During graph traversal, input should
-    % be passed between nodes in a cell arrays, where each cell contains input
-    % from one parent.
+    % A ModelNode graph should be acyclic. During graph traversal, data should
+    % be passed from upstream to downstream nodes in a cell array, where each
+    % entry contains input from one parent.
+    %
+    % Subclasses of ModelNode must define a method, called returnOutput(), to
+    % return output when the node is queried during graph traversal. 
     
     properties
         upstream NodeList   % List of parent nodes

@@ -1,5 +1,5 @@
 classdef TwoArmLnHyperNode < HyperNode
-    % Full two-arm linear-nonlinear cascade model. This 'hypernode' comprises
+    % Full two-arm linear-nonlinear cascade model. This HyperNode comprises
     % other nodes.
     
     properties

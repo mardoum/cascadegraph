@@ -1,9 +1,9 @@
 classdef SigmoidNlNode < ParameterizedNode
-	% Nonlinearity described as cumulative normal density function.
+	% Nonlinearity described by cumulative normal density function.
     
     properties
-		alpha       % maximum conductance
-        beta        % sensitivity of NL to generator signal
+		alpha       % determines maximum
+        beta        % determines steepness
         gamma       % determines threshold/shoulder location
         epsilon     % shifts all up or down
     end
@@ -23,8 +23,9 @@ classdef SigmoidNlNode < ParameterizedNode
     methods (Static)
         
         function out = processTempParams(params, xarray)
-            % Sigmoid nonlinearity parameterized as cumulative normal density function
-            % alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
+            % Sigmoid nonlinearity parameterized as cumulative normal density
+            % function:
+            %   alpha * normcdf(beta .* xarray + gamma, 0, 1) + epsilon;
             if isstruct(params)
                 params = [params.alpha; params.beta; params.gamma; params.epsilon];
             end
@@ -35,17 +36,21 @@ classdef SigmoidNlNode < ParameterizedNode
     
     methods
         
-        function params = optimizeParams(obj, xarray, yarray, params0, lb, ub, options, optimIters)
+        function params = optimizeParams(...
+                obj, xarray, yarray, params0, lowerBounds, upperBounds, options, optimIters)
+            % Override ParameterizedNode.optimizeParams() so that lsqcurvefit()
+            % is used here.
+            
             % Set defaults
             narginchk(3,8);
             if nargin < 4
                 params0 = [2*max(yarray), 0.1, -1, -1]';
             end
             if nargin < 5
-                lb = [-Inf -Inf -Inf -Inf];
+                lowerBounds = [-Inf -Inf -Inf -Inf];
             end
             if nargin < 6
-                ub = [Inf Inf Inf max(yarray(:))];
+                upperBounds = [Inf Inf Inf max(yarray(:))];
             end
             if nargin < 7
                 options = optimset('MaxIter', 1500, 'MaxFunEvals', 600*length(params0), ...
@@ -55,8 +60,10 @@ classdef SigmoidNlNode < ParameterizedNode
                 optimIters = 5;
             end
             
+            % Optimze
             for optimIter = 1:optimIters
-                params = lsqcurvefit(@obj.processTempParams, params0, xarray, yarray, lb, ub, options);
+                params = lsqcurvefit(@obj.processTempParams, params0, xarray, yarray, ...
+                    lowerBounds, upperBounds, options);
                 params0 = params;  % next iteration starts at previous returned
             end
             

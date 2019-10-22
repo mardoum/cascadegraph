@@ -1,8 +1,9 @@
 classdef PolyfitNlNode < ModelNode
-    % Nonlinearity described as polynomial evaluation.
+    % Nonlinearity described by polynomial evaluation.
     %
-    % Does not subclass from ParameterizedNode because parameters are stored as
-    % vectors, which causes incompatibilities with methods in ParameterizedNode.
+    % Note: Does not subclass from ParameterizedNode because parameters are
+    % stored as vectors, which causes incompatibilities with methods in
+    % ParameterizedNode.
     
     properties
         coeff
@@ -28,8 +29,8 @@ classdef PolyfitNlNode < ModelNode
             out = polyval(obj.coeff, input, [], obj.mu);
         end
         
-        function optimizeParams(obj, nlX, nlY, degree)
-            [fitCoeff, ~, fitMu] = polyfit(nlX, nlY, degree);
+        function optimizeParams(obj, xarray, yarray, degree)
+            [fitCoeff, ~, fitMu] = polyfit(xarray, yarray, degree);
             obj.coeff = fitCoeff;
             obj.mu = fitMu;
         end
@@ -41,10 +42,12 @@ classdef PolyfitNlNode < ModelNode
     end
     
     methods (Access = protected)
+        
         function out = returnOutput(obj, in)
             validateattributes(in, {'cell'}, {'numel', 1});
             out = obj.process(in{1});
         end
+        
     end
 
 end

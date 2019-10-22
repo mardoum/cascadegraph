@@ -1,9 +1,10 @@
 function rSquared = computeVarianceExplained(predicted, measured)
-% Computes row-wise R^2 between a prediction and some variable.  If inputs are
-% matrices, R^2 values for all rows are returned as a vector.
+% Computes row-wise R^2 between a two signals.  If inputs are matrices, R^2
+% values for all rows are returned as a vector.
+% 
 % Input:
-%   prediction  - matrix of rows representing prediction
-%   measured    - matrix of rows representing predicted variable
+%   prediction  - matrix of rows signal 1
+%   measured    - matrix of rows signal 2
 
 assert(isequal(size(predicted), size(measured)), 'Input matrices must have same size')
 

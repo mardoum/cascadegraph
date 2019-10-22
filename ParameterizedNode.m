@@ -3,12 +3,14 @@ classdef (Abstract) ParameterizedNode < ModelNode
     % parameters be defined. The ParameterizedNode class is abstract and
     % contains methods used to manage and optimize free parameters. 
     %
-    % A subclass of ParameterizedNode must:
+    % Subclasses of ParameterizedNode must:
     %   - store each free parameter as a property 
     %   - define a list of names of free parameters (called freeParamNames). 
-    %   - define a method to process external inputs using input parameters
-    %     (called processTempParams(params, input)). These parameters need not
-    %     match the parameters stored by a node instance as properties.
+    %   - define a method, called processTempParams(params, input), to process
+    %     external inputs using input parameters. 
+    %     * Note: this method should accept any parameters and is called by
+    %     ParameterizedNode.process(), which always uses the parameters stored
+    %     as instance properties.
     
     properties (Abstract, Constant)
         freeParamNames  % list of free parameter property names

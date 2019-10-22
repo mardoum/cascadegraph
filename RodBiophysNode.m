@@ -1,8 +1,8 @@
 classdef RodBiophysNode < ParameterizedNode
-    % Biophysical rod model
+    % Biophysical model of rod photoreceptor.
     
     properties
-        % free params
+        % Free params
         beta                % rate constant for removal of Ca from outer segment
         hillaffinity        % affinity for Ca2+ (also called K?) (~0.5*dark Calcium)
         sigma               % decay rate constant for rhodopsin activity (1/sec) (~100/sec)
@@ -10,13 +10,12 @@ classdef RodBiophysNode < ParameterizedNode
         eta                 % activation rate constant PDE (1/sec) (>100/sec) (juan: "PDE dark activity")
         % phi (decay rate constant for phosphodiesterase activity (1/sec) (~30-100/sec)) always set = to alpha
         
-        % fixed params
+        % Fixed params
         betaSlow
         hillcoef            % effective Ca2+ cooperativity to GC (2-4)
         darkCurrent         % determined with saturating flash
         
-        % should be set if upstream node is assigned
-        dt_stored
+        dt_stored           % timestep size, should not be empty if upstream node is assigned
     end
     
     properties (Constant)
@@ -34,7 +33,7 @@ classdef RodBiophysNode < ParameterizedNode
         end
 
         function prediction = processTempParams(obj, params, stim, dt)
-            % run with input free params, using instance properties for fixed params
+            % Use input free params and stored fixed params
             if ~isstruct(params)
                 params = obj.paramVecToStruct(params);
             end
@@ -71,7 +70,7 @@ classdef RodBiophysNode < ParameterizedNode
                 cslow(ii) = cslow(ii-1) - dt * obj.betaSlow * (cslow(ii-1) - c(ii-1));
             end
 
-            % determine current change
+            % Determine current change
             % ios = cgmp2cur * g.^cgmphill * 2 ./ (2 + cslow ./ cdark);
             prediction = -obj.cgmp2cur * g.^obj.cgmphill ./ (1 + cslow ./ obj.cdark);
         end
