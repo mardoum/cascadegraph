@@ -26,13 +26,12 @@ classdef RodLinearNode < ParameterizedNode
 
         function prediction = processTempParams(obj, params, stim, dt)
             % Use input free params and stored fixed params
-            if size(stim,1) < size(stim,2)
-                stim = stim';
-            end
+            stim = stim';
             t = ((1:length(stim)) * dt)';
             filter = params.scFact .* (((t./params.tauR).^3)./(1+((t./params.tauR).^3))) .* ...
                 exp(-((t./params.tauD)));
             prediction = real(ifft(fft(stim) .* fft(filter))) - obj.darkCurrent;
+            prediction = prediction';
         end
         
     end

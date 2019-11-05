@@ -29,7 +29,7 @@ classdef PolyfitNlNode < ModelNode
             out = polyval(obj.coeff, input, [], obj.mu);
         end
         
-        function optimizeParams(obj, xarray, yarray, degree)
+        function fitToSample(obj, xarray, yarray, degree)
             [fitCoeff, ~, fitMu] = polyfit(xarray, yarray, degree);
             obj.coeff = fitCoeff;
             obj.mu = fitMu;

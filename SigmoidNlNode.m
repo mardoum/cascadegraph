@@ -36,30 +36,28 @@ classdef SigmoidNlNode < ParameterizedNode
     
     methods
         
-        function params = optimizeParams(...
+        function params = fitToSample(...
                 obj, xarray, yarray, params0, lowerBounds, upperBounds, options, optimIters)
-            % Override ParameterizedNode.optimizeParams() so that lsqcurvefit()
-            % is used here.
-            
+
             % Set defaults
             narginchk(3,8);
-            if nargin < 4
-                params0 = [2*max(yarray), 0.1, -1, -1]';
-            end
-            if nargin < 5
-                lowerBounds = [-Inf -Inf -Inf -Inf];
-            end
-            if nargin < 6
-                upperBounds = [Inf Inf Inf max(yarray(:))];
-            end
-            if nargin < 7
-                options = optimset('MaxIter', 1500, 'MaxFunEvals', 600*length(params0), ...
-                    'Display', 'off');
-            end
             if nargin < 8
                 optimIters = 5;
+                if nargin < 7
+                    options = optimset('MaxIter', 1500, 'MaxFunEvals', 2400, ...
+                    'Display', 'off');
+                    if nargin < 6
+                        upperBounds = [Inf Inf Inf max(yarray(:))];
+                        if nargin < 5
+                            lowerBounds = [-Inf -Inf -Inf -Inf];
+                            if nargin < 4
+                                params0 = [2*max(yarray), 0.1, -1, -1]';
+                            end
+                        end
+                    end
+                end
             end
-            
+
             % Optimze
             for optimIter = 1:optimIters
                 params = lsqcurvefit(@obj.processTempParams, params0, xarray, yarray, ...

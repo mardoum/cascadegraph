@@ -36,18 +36,16 @@ classdef LnHyperNode < HyperNode
             nodeStruct.filter = ParamFilterNode([obj.numFilt; obj.tauR; obj.tauD; obj.tauP; obj.phi]);
             nodeStruct.nonlinearity = SigmoidNlNode([obj.alpha; obj.beta; obj.gamma; obj.epsilon]);
             
+            if ~isempty(obj.dt_stored)
+                nodeStruct.filter.dt_stored = obj.dt_stored;
+            end
+            
             % Construct graph
             nodeStruct.filter.upstream.add(nodeStruct.input);
             nodeStruct.nonlinearity.upstream.add(nodeStruct.filter);
         end
         
         function prediction = processTempParams(obj, params, stim, dt)
-            if size(stim,1) < size(stim,2)
-                stim = stim';
-                transpose = true;
-            else
-                transpose = false;
-            end
             obj.subnodesProtected.input.data = stim;
             obj.subnodesProtected.filter.dt_stored = dt;
             
@@ -57,10 +55,6 @@ classdef LnHyperNode < HyperNode
                 [params.alpha; params.beta; params.gamma; params.epsilon]);
             
             prediction = obj.subnodesProtected.nonlinearity.processUpstream();
-            
-            if transpose
-                prediction = prediction';
-            end
         end
         
     end

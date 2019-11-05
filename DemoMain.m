@@ -126,7 +126,7 @@ xlabel('time (s)'); ylabel('current (pA)');
 % 
 % Each of the nonlinearity nodes contains parameters that define the form of the
 % nonlinearity, and these parameters must be optimized. This is done for each
-% nonlinearity separately using the optimizeParams() method.
+% nonlinearity separately using the fitToSample() method.
 
 dataNodeInstance = DataNode(stimulusTestSet);
 filterNodeInstance = FilterNode(filter, SETTINGS.useAnticausal);
@@ -134,14 +134,14 @@ filterNodeInstance.upstream.add(dataNodeInstance);
 
 % Try polynomial fit nonlinearity
 polyfitNlNodeInstance = PolyfitNlNode();
-polyfitNlNodeInstance.optimizeParams(nlX, nlY, SETTINGS.polyFitDegree);
+polyfitNlNodeInstance.fitToSample(nlX, nlY, SETTINGS.polyFitDegree);
 polyfitNlNodeInstance.upstream.add(filterNodeInstance);
 
 predictionPolyfitNl = polyfitNlNodeInstance.processUpstream();
 
 % Try sigmoid nonlinearity
 sigmoidNlNodeInstance = SigmoidNlNode();
-sigmoidNlNodeInstance.optimizeParams(nlX, nlY);
+sigmoidNlNodeInstance.fitToSample(nlX, nlY);
 sigmoidNlNodeInstance.upstream.add(filterNodeInstance);
 
 predictionSigmoidNl = sigmoidNlNodeInstance.processUpstream();

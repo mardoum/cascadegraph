@@ -18,9 +18,6 @@ classdef FilterNode < ModelNode
         end
         
         function out = process(obj, stim)
-            if size(stim,1) > size(stim,2)
-                stim = stim';
-            end
             out = convolveFilterWithStim(obj.filter, stim, obj.hasAnticausalHalf);
         end
         

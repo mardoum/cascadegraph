@@ -58,6 +58,11 @@ classdef TwoArmLnHyperNode < HyperNode
                 [obj.alpha2; obj.beta2; obj.gamma2; obj.epsilon2]);
             nodeStruct.sum = SumNode();
             
+            if ~isempty(obj.dt_stored)
+                nodeStruct.filter1.dt_stored = obj.dt_stored;
+                nodeStruct.filter2.dt_stored = obj.dt_stored;
+            end
+            
             % Construct graph
             nodeStruct.filter1.upstream.add(nodeStruct.input);
             nodeStruct.filter2.upstream.add(nodeStruct.input);
@@ -69,12 +74,6 @@ classdef TwoArmLnHyperNode < HyperNode
         
         function prediction = processTempParams(obj, params, stim, dt)
             % run with input free params, using instance properties for fixed params
-            if size(stim,1) < size(stim,2)
-                stim = stim';
-                transpose = true;
-            else
-                transpose = false;
-            end
             obj.subnodesProtected.input.data = stim;
             obj.subnodesProtected.filter1.dt_stored = dt;
             obj.subnodesProtected.filter2.dt_stored = dt;
@@ -89,10 +88,6 @@ classdef TwoArmLnHyperNode < HyperNode
                 [params.alpha2; params.beta2; params.gamma2; params.epsilon2]);
             
             prediction = obj.subnodesProtected.nonlinearity1.processUpstream();
-            
-            if transpose
-                prediction = prediction';
-            end
         end
         
     end

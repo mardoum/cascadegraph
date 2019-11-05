@@ -4,9 +4,9 @@ classdef (Abstract) ModelNode < handle
     % computation graph. Every ModelNode stores a list, called upstream, of
     % incoming neighbor nodes (this list can be empty).
     %
-    % A ModelNode graph should be acyclic. During graph traversal, data should
-    % be passed from upstream to downstream nodes in a cell array, where each
-    % entry contains input from one parent.
+    % A ModelNode graph should be acyclic. During graph traversal, data are
+    % passed from upstream to downstream nodes in a cell array, where each entry
+    % contains input from one parent.
     %
     % Subclasses of ModelNode must define a method, called returnOutput(), to
     % return output when the node is queried during graph traversal. 

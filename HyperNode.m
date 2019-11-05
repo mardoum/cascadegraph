@@ -10,7 +10,9 @@ classdef (Abstract) HyperNode < ParameterizedNode
     %   - store as properties all parameters necessary to define the parameters
     %     of contained nodes.
     %   - have a subnodes() method that builds the contained graph and returns
-    %     comprised nodes in a struct.
+    %     comprised nodes in a struct. Note: subnodes() returns a copy of the
+    %     graph that is current when the method is called, but this copy is not
+    %     updated when parameters change in the HyperNode itself.
     
     properties (Access = protected)        
         % subnodesProtected is a protected persistent copy of the contained
