@@ -26,7 +26,7 @@ nlY = zeros(numBins, 1);
 switch binType
     case 'equalWidth'
         [~, binEdges, binIdx] = histcounts(inputSignal, numBins);
-        nlX = 0.5 * (binEdges(1:end-1) + binEdges(2:end));
+        nlX = 0.5 * (binEdges(1:end-1) + binEdges(2:end))';
         
     case 'equalN'
         assert(rem(numPoints, numBins) == 0, ...
@@ -43,12 +43,12 @@ switch binType
         error('binType not recognized')
 end
 
-for ii = 1:numBins
-    binMask = (binIdx == ii);
-    nlY(ii) = mean(response(binMask));
+for i = 1:numBins
+    binMask = (binIdx == i);
+    nlY(i) = mean(response(binMask));
     
     if strcmp(binType, 'equalN')
-        nlX(ii) = mean(inputSignal(binMask));
+        nlX(i) = mean(inputSignal(binMask));
     end
 end
 

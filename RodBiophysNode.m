@@ -58,16 +58,16 @@ classdef RodBiophysNode < ParameterizedNode
             s(1) = gdark * params.eta / phi;
             cslow(1) = obj.cdark;
                                                                 % difference equations
-            for ii = 2:numPts
-                r(ii) = r(ii-1) + dt * (-params.sigma * r(ii-1)) + params.gamma * stim(ii-1);
-                p(ii) = p(ii-1) + dt * (r(ii-1) + params.eta - phi * p(ii-1));
-                g(ii) = g(ii-1) + dt * (s(ii-1) - p(ii-1) * g(ii-1));
+            for i = 2:numPts
+                r(i) = r(i-1) + dt * (-params.sigma * r(i-1)) + params.gamma * stim(i-1);
+                p(i) = p(i-1) + dt * (r(i-1) + params.eta - phi * p(i-1));
+                g(i) = g(i-1) + dt * (s(i-1) - p(i-1) * g(i-1));
                 % 	c(pnt) = c(pnt-1) + TimeStep * (cur2ca * cgmp2cur * g(pnt-1)^cgmphill - beta * c(pnt-1));
-%                 I = obj.cgmp2cur * g(ii-1)^obj.cgmphill;
-                I = obj.cgmp2cur * g(ii-1)^obj.cgmphill / (1 + (cslow(ii-1) / obj.cdark));
-                c(ii) = c(ii-1) + dt * (cur2ca * I - params.beta * c(ii-1));
-                s(ii) = smax / (1 + (c(ii) / params.hillaffinity)^obj.hillcoef);
-                cslow(ii) = cslow(ii-1) - dt * obj.betaSlow * (cslow(ii-1) - c(ii-1));
+%                 I = obj.cgmp2cur * g(i-1)^obj.cgmphill;
+                I = obj.cgmp2cur * g(i-1)^obj.cgmphill / (1 + (cslow(i-1) / obj.cdark));
+                c(i) = c(i-1) + dt * (cur2ca * I - params.beta * c(i-1));
+                s(i) = smax / (1 + (c(i) / params.hillaffinity)^obj.hillcoef);
+                cslow(i) = cslow(i-1) - dt * obj.betaSlow * (cslow(i-1) - c(i-1));
             end
 
             % Determine current change

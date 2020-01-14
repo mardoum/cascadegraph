@@ -36,11 +36,11 @@ classdef (Abstract) ModelNode < handle
                 out = node.returnOutput();
             else
                 in = cell(node.upstream.count, 1);
-                for ii = 1:node.upstream.count
-                    in{ii} = processParents(node.upstream.items{ii});
+                for i = 1:node.upstream.count
+                    in{i} = processParents(node.upstream.items{i});
                     % if 1x1 cell array, unpack:
-                    if (isa(in{ii}, 'cell') && length(in{ii}) == 1) 
-                        in{ii} = in{ii}{1};
+                    if (isa(in{i}, 'cell') && length(in{i}) == 1) 
+                        in{i} = in{i}{1};
                     end
                 end
                 out = node.returnOutput(in);

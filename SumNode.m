@@ -6,9 +6,9 @@ classdef SumNode < ModelNode
         function out = process(in)
             sum = in{1};
             if length(in) > 1
-                for ii = 2:length(in)
-                    assert(isequal(size(in{ii}), size(in{1})), 'Dimensions of all input vectors must be equal')
-                    sum = sum + in{ii};
+                for i = 2:length(in)
+                    assert(isequal(size(in{i}), size(in{1})), 'Dimensions of all input vectors must be equal')
+                    sum = sum + in{i};
                 end
             end
             out = sum;

@@ -33,8 +33,8 @@ classdef (Abstract) ParameterizedNode < ModelNode
                 otherParams = varargin{2};
                 assert(isstruct(otherParams), 'Input non-free params must be in a struct')
                 otherParamNames = fieldnames(otherParams);
-                for ii = 1:length(otherParamNames)
-                    obj.(otherParamNames{ii}) = otherParams.(otherParamNames{ii});
+                for i = 1:length(otherParamNames)
+                    obj.(otherParamNames{i}) = otherParams.(otherParamNames{i});
                 end
             end
         end
@@ -74,15 +74,15 @@ classdef (Abstract) ParameterizedNode < ModelNode
             end
             assert(length(params) == length(obj.freeParamNames), ...
                 'Length of input vector does not equal number of free parameters')
-            for ii = 1:length(params)
-                obj.(obj.freeParamNames{ii}) = params(ii);
+            for i = 1:length(params)
+                obj.(obj.freeParamNames{i}) = params(i);
             end
         end
         
         function params = getFreeParams(obj, outputClass)
             params = zeros(length(obj.freeParamNames), 1);
-            for ii = 1:length(obj.freeParamNames)
-                params(ii) = obj.(obj.freeParamNames{ii});
+            for i = 1:length(obj.freeParamNames)
+                params(i) = obj.(obj.freeParamNames{i});
             end
             if nargin > 1 && strcmp(outputClass, 'struct')
                 params = obj.paramVecToStruct(params);
@@ -92,8 +92,8 @@ classdef (Abstract) ParameterizedNode < ModelNode
         function paramStruct = paramVecToStruct(obj, params)
             assert(length(params) == length(obj.freeParamNames), ...
                 'Length of input vector does not equal number of free parameters')
-            for ii = 1:length(params)
-                paramStruct.(obj.freeParamNames{ii}) = params(ii);
+            for i = 1:length(params)
+                paramStruct.(obj.freeParamNames{i}) = params(i);
             end
         end
         
@@ -101,8 +101,8 @@ classdef (Abstract) ParameterizedNode < ModelNode
             assert(length(fieldnames(params)) == length(obj.freeParamNames), ...
                 'Length of input struct does not equal number of free parameters')
             paramVec = zeros(length(obj.freeParamNames), 1);
-            for ii = 1:length(obj.freeParamNames)
-                paramVec(ii) = params.(obj.freeParamNames{ii});
+            for i = 1:length(obj.freeParamNames)
+                paramVec(i) = params.(obj.freeParamNames{i});
             end
         end
         
