@@ -1,4 +1,4 @@
-classdef (Abstract) ModelNode < handle
+classdef (Abstract) ModelNode < matlab.mixin.Copyable
     % A ModelNode is a node in a directed computation graph. The ModelNode class
     % is abstract and contains methods used to recursively traverse the
     % computation graph. Every ModelNode stores a list, called upstream, of
@@ -24,6 +24,12 @@ classdef (Abstract) ModelNode < handle
         function out = processUpstream(obj)
             % Initiate graph traversal
             out = processParents(obj);
+        end
+        
+        function cp = copyNode(obj)
+            % Shallow copy without connections to upstream nodes
+            cp = obj.copy;  % method from matlab.mixin.Copyable
+            cp.upstream = NodeList();
         end
         
     end
