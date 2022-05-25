@@ -12,10 +12,9 @@ function convolution = convolveFilterWithStim(filter, stim, filterHasAnticausalH
 assert(rem(length(filter), 2) == 0, 'Filter must have an even number of points')
 
 filterLength = length(filter);
-stimLength = size(stim,2); 
-numEpochs = size(stim,1);
+[numEpochs, stimLength] = size(stim);
 
-stim = stim - repmat(mean(stim,2), 1, length(stim));
+stim = stim - repmat(mean(stim, 2), 1, stimLength);
 
 % Zero pad the filter or stimulus vectors so that they are the same length and
 % can be convolved by pointwise multiplication in the frequency domain.
@@ -23,9 +22,9 @@ lengthDiff = abs(filterLength - stimLength);
 if filterLength < stimLength
     midpoint = length(filter) / 2;
     if filterHasAnticausalHalf
-        filter = [filter(1:midpoint) zeros(1,lengthDiff) filter(midpoint+1:end)];
+        filter = [filter(1:midpoint) zeros(1, lengthDiff) filter(midpoint+1:end)];
     else
-        filter = [filter zeros(1,lengthDiff)];
+        filter = [filter zeros(1, lengthDiff)];
     end
 else
     stim = [stim zeros(numEpochs, lengthDiff)];

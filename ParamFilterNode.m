@@ -34,7 +34,7 @@ classdef ParamFilterNode < ParameterizedNode
         
         function prediction = processTempParams(params, stim, dt)
             % run with input free params, using instance properties for fixed params
-            filter = ParamFilterNode.getFilterWithParams(params, length(stim), dt);
+            filter = ParamFilterNode.getFilterWithParams(params, size(stim, 2), dt);
             prediction = real(ifft(fft(stim') .* fft(filter)))';
         end
         
@@ -42,7 +42,7 @@ classdef ParamFilterNode < ParameterizedNode
             t = ((1:numPoints) * dt)';
             filter = (((t./abs(params.tauR)) .^ params.numFilt) ./ (1 + ((t./abs(params.tauR)) .^ params.numFilt))) ...
                 .* exp(-((t./params.tauD))) .* cos(((2.*pi.*t) ./ params.tauP) + (2*pi*params.phi/360));
-            filter = filter/max(abs([max(filter) min(filter)]));
+            filter = filter/max(abs(filter));
         end
         
     end

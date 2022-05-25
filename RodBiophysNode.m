@@ -43,13 +43,13 @@ classdef RodBiophysNode < ParameterizedNode
             cur2ca = params.beta * obj.cdark / obj.darkCurrent;             % also called q - q and smax calculated from steady state
             smax = params.eta / phi * gdark * (1 + (obj.cdark / params.hillaffinity)^obj.hillcoef);
 
-            numPts=length(stim);                                % pre-allocate
-            r     = zeros(numPts,1);  % activity of opsin molecules
-            p     = zeros(numPts,1);  % activity of PDE
-            g     = zeros(numPts,1);  % concentration of cGMP
-            c     = zeros(numPts,1);
-            s     = zeros(numPts,1);  % rate of cGMP synthesis
-            cslow = zeros(numPts,1);
+            numPts=size(stim, 2);                                % pre-allocate
+            r     = zeros(numPts, 1);  % activity of opsin molecules
+            p     = zeros(numPts, 1);  % activity of PDE
+            g     = zeros(numPts, 1);  % concentration of cGMP
+            c     = zeros(numPts, 1);
+            s     = zeros(numPts, 1);  % rate of cGMP synthesis
+            cslow = zeros(numPts, 1);
             
             r(1) = 0;                                           % initialize
             p(1) = params.eta / phi;

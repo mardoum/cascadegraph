@@ -48,7 +48,7 @@ stimulusTestSet = S.stimulus(17:20,:);
 samplingInterval = S.samplingInterval;
 
 % Visualize example trial
-tTrial  = ((1:length(response)) * samplingInterval)';   % Time vector
+tTrial  = ((1:size(response, 2)) * samplingInterval)';   % Time vector
 figure;
 subplot(2,1,1); plot(tTrial, responseTestSet(1,:));
 title('response (example trial)'); ylabel('current (pA)');

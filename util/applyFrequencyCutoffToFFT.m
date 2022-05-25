@@ -5,7 +5,7 @@ function out = applyFrequencyCutoffToFFT(originalFFT, freqCutoff, samplingInterv
 %   freqCutoff        - cutoff frequency (Hz)
 %   samplingInterval  - (s)
 
-timePoints = length(originalFFT);  % note: length of points in time domain same as length of FFT
+timePoints = size(originalFFT, 2);  % note: length of points in time domain same as length of FFT
 freqStepSize = 1/(samplingInterval * timePoints);
 freqCutoffPts = round(freqCutoff / freqStepSize);
 

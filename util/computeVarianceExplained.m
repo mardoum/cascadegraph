@@ -8,7 +8,7 @@ function rSquared = computeVarianceExplained(predicted, measured)
 
 assert(isequal(size(predicted), size(measured)), 'Input matrices must have same size')
 
-if size(predicted,1) > size(predicted,2)
+if size(predicted, 1) > size(predicted, 2)
     warning('Input matrices have more rows than columns. R^2 calculated for each row.')
 end
 

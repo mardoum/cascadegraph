@@ -6,6 +6,6 @@ function out = baselineSubtract(original, pointsToAvgForBaseline)
 %   prePoints  - number of points to average to estimate baseline 
 
 baselineMeans = mean(original(:, 1:pointsToAvgForBaseline), 2);
-out = original - repmat(baselineMeans, 1, length(original));
+out = original - repmat(baselineMeans, 1, size(original, 2));
 
 end
