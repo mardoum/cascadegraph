@@ -32,6 +32,9 @@ filterFFT = mean(respFFT .* conj(stimFFT), 1);
 
 % Normalize by stimulus power
 if nargin > 3 && correctStimPower
+    if nargin < 4
+        warning('May be necessary to apply a frequency cutoff when normalizing by stimulus power to prevent blow-up at high frequencies (from dividing by near-zero values)')
+    end
     filterFFT = filterFFT ./ mean(stimFFT .* conj(stimFFT), 1);
 end
 
