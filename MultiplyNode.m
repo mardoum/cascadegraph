@@ -1,18 +1,18 @@
-classdef SumNode < ModelNode
-    % A SumNode sums its inputs element-wise.
+classdef MultiplyNode < ModelNode
+    % A MultiplyNode multiplies its inputs element-wise.
     
     methods (Static)
         
         function out = process(in)
-            sum = in{1};
+            product = in{1};
             if length(in) > 1
                 for i = 2:length(in)
                     assert(isequal(size(in{i}), size(in{1})), ...
                         'Dimensions of all inputs must be equal')
-                    sum = sum + in{i};
+                    product = product .* in{i};
                 end
             end
-            out = sum;
+            out = product;
         end
         
     end
