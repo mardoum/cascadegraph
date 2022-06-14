@@ -43,6 +43,7 @@ classdef ParamFilterNode < ParameterizedNode
             filter = (((t./abs(params.tauR)) .^ params.numFilt) ./ (1 + ((t./abs(params.tauR)) .^ params.numFilt))) ...
                 .* exp(-((t./params.tauD))) .* cos(((2.*pi.*t) ./ params.tauP) + (2*pi*params.phi/360));
             filter = filter/max(abs(filter));
+            filter = filter - mean(filter);
         end
         
     end
