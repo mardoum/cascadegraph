@@ -13,7 +13,7 @@ classdef (Abstract) ParameterizedNode < ModelNode
     %     as instance properties.
     
     properties (Abstract, Constant)
-        freeParamNames  % list of free parameter property names
+        freeParamNames  % list (in cell array) of free parameter property names
     end
     
     methods
@@ -51,18 +51,23 @@ classdef (Abstract) ParameterizedNode < ModelNode
             end
         end
         
-        function fitParams = optimizeParams(obj, params0, input, target, dt, options)
-            if nargin > 5
-                fitParams = fminsearch(@tryParams, params0, options);
-            else
+        function fitParams = optimizeParams(obj, params0, input, target, dt, options, errorFn)
+            if nargin < 7 || isempty(errorFn)
+                % Default error function: mean squared error
+                errorFn = @(prediction, target) mean(mean((target - prediction).^2));
+            end
+            
+            if nargin < 6 || isempty(options)
                 fitParams = fminsearch(@tryParams, params0);
+            else
+                fitParams = fminsearch(@tryParams, params0, options);
             end
             
             function error = tryParams(params)
+                % Compute error given candidate parameters
                 pstruct = obj.paramVecToStruct(params);
                 prediction = obj.processTempParams(pstruct, input, dt);
-                sqerrors = (target - prediction).^2;
-                error = sum(sqerrors(:));
+                error = errorFn(prediction, target);
             end
             
             obj.writeFreeParams(fitParams)
