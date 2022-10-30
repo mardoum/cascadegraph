@@ -1,4 +1,5 @@
 %% CascadeGraph Demo: Linear-Nonlinear Models
+
 % This script introduces basic functionality of CascadeGraph. We will first
 % implement a simple two-stage linear-nonlinear (LN) cascade model to predict a
 % visual neuron's response to a white-noise light stimulus. We'll do this in a
@@ -11,33 +12,28 @@
 % such a simple model can achieve impressive predictive power when the
 % statistics of the noise stimulus, like mean and variance, are held stationary.
 
-%% Set constant settings
 
-clear; close all;
+%% First, add CascadeGraph to the search path
 
-SETTINGS.frequencyCutoff  = 20;
+% *** Replace path string with the path to the top-level cascadegraph folder on
+% your machine.
+addpath(genpath('/Users/myusername/matlab_packages/cascadegraph'))
 
-% Filter settings:
-SETTINGS.filterPts        = 1250;  % length of ONE SIDE of filter (causal or anti-causal side)
-SETTINGS.correctStimPower = true;
-SETTINGS.useAnticausal    = false;
-
-% Nonlinearity settings:
-SETTINGS.numBins          = 100;
-SETTINGS.binningType      = 'equalN';
-SETTINGS.polyFitDegree    = 3;
 
 %% Load data
+
 % We start with some example data containing electrical responses recorded in a
 % visual neuron while a noisy light stimulus was presented. We load matrices
 % containing the stimulus and the response, where each row contains data from a
 % single trial.
 
+clear; close all;
+
 % Load data from file
-addpath([pwd '/util']);
 S = load('exampleData.mat');
 
 % Filter out high-frequency noise
+SETTINGS.frequencyCutoff = 20;
 S.response = applyFrequencyCutoff(S.response, SETTINGS.frequencyCutoff, S.samplingInterval);
 
 % Split data into training and test sets (80/20 split)
@@ -50,12 +46,29 @@ samplingInterval = S.samplingInterval;
 % Visualize example trial
 tTrial  = ((1:size(response, 2)) * samplingInterval)';   % Time vector
 figure;
-subplot(2,1,1); plot(tTrial, responseTestSet(1,:));
+subplot(2,1,1);
+plot(tTrial, responseTestSet(1,:));
 title('response (example trial)'); ylabel('current (pA)');
-subplot(2,1,2); plot(tTrial, stimulusTestSet(1,:));
+subplot(2,1,2);
+plot(tTrial, stimulusTestSet(1,:));
 title('stimulus'); xlabel('time (s)'); ylabel('light intensity');
 
+
+%% Set constant settings
+
+% Set filter settings:
+SETTINGS.filterPts        = 1250;    % Length of filter (to one side of t=0)
+SETTINGS.useAnticausal    = false;   % Whether to use two-sided filter (causal and anticausal)
+SETTINGS.correctStimPower = true;    % Whether to divide filter power by stimulus power
+
+% Set nonlinearity settings
+SETTINGS.numBins          = 100;       % Number of sampling bins in nonlinearity
+SETTINGS.binningType      = 'equalN';  % Select equal bin width or equal samples per bin
+SETTINGS.polyFitDegree    = 3;         % Select degree of polynomial fit to nonlinearity
+
+
 %% Compute filter
+
 % Because the stimulus is gaussian white noise, the best filter can be computed
 % using a cross-correlation between stimulus and response:
 
@@ -77,7 +90,10 @@ filter = filter/max(abs(filter));   % Normalize filter
 tFilter = ((1:length(filter)) * samplingInterval)';
 clear filterCausal filterAnticausal
 
-%% Compute model prediction (without computation graph)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Compute model prediction WITHOUT computation graph
+
 % The real power of CascadeGraph is in building models in a graph, where nodes
 % are computational elements and edges control the flow of data. However,
 % because LN models only contain two computational elements it's worth getting
@@ -88,6 +104,7 @@ generatorSignal = convolveFilterWithStim(filter, stimulus, SETTINGS.useAnticausa
 
 % Sample the input-output relationship between the filtered stimulus and the
 % target response, and use polynomial curve fitting to describe the curve.
+
 [nlX, nlY] = sampleNl(generatorSignal, response, SETTINGS.numBins, SETTINGS.binningType); 
 [polyfitResults.coeff, ~, polyfitResults.mu] = polyfit(nlX, nlY, SETTINGS.polyFitDegree);
 
@@ -101,7 +118,8 @@ rSquaredAll = computeVarianceExplained(reshape(prediction',1,[]), reshape(respon
 disp(['Overall R^2: ' num2str(rSquaredAll) '   Mean R^2: ' num2str(mean(rSquared))])
 
 % Plot
-figure; subplot(2,1,1);
+figure;
+subplot(2,1,1);
 plot(tFilter, filter);
 xlabel('time (s)');
 title('filter');
@@ -117,7 +135,10 @@ plot(tTrial, responseTestSet(1,:));
 plot(tTrial, prediction(1,:), 'linewidth', 2);
 xlabel('time (s)'); ylabel('current (pA)');
 
-%% Compute model prediction (with computation graph)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Compute model prediction WITH computation graph
+
 % Now let's do the same thing, but this time using node objects that represent
 % the two stages. In addition to the nodes representing the filter and
 % nonlinearity, we create a node that stores the stimulus and place it upstream
@@ -161,7 +182,8 @@ rSquaredAllPoly = computeVarianceExplained(...
 disp(['PolyFit - Overall R^2: ' num2str(rSquaredAllPoly)])
 
 % Plot
-figure; subplot(2,1,1); 
+figure; 
+subplot(2,1,1); 
 plot(tFilter, filterNodeInstance.filter);
 xlabel('time (s)');
 title('filter');
@@ -177,7 +199,9 @@ plot(tTrial, responseTestSet(1,:));
 plot(tTrial, prediction(1,:), 'linewidth', 2);
 xlabel('time (s)'); ylabel('current (pA)');
 
-%% Try fitting sigmoidal nonlinearity
+
+%% Try a sigmoidal nonlinearity
+
 % Instead of the polynomial fit nonlinearity used above, let's try a sigmoid. We
 % can reuse the nodes containing the stimulus and filter by adding an upstream
 % edge between the filter node and the new sigmoid nonlinearity node.
@@ -199,6 +223,8 @@ rSquaredAllPoly = computeVarianceExplained(...
 
 disp(['Sigmoid - Overall R^2: ' num2str(rSquaredAllPoly)])
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Jointly fit parameterized filter and nonlinearity
 % In the previous examples, the nodes that require optmization are optimized
 % separately. But often we need to optimize two or more components jointly, such
@@ -219,29 +245,33 @@ disp(['Sigmoid - Overall R^2: ' num2str(rSquaredAllPoly)])
 % example the DataNode that stores the stimulus remains outside the hyper node
 % and is referenced in the hypernode's "upstream" field.)
 
+
+% Set free parameter initial conditions. The first 5 parameters define the
+% filter. The following 4 parameters define the nonlinearity. All are placed in
+% the same vector to be optimized together.
+%
+% Filter:
+init.numFilt = 5;       % scaling factor
+init.tauR    = 3;       % rising phase time constant
+init.tauD    = 0.1;     % dampening time constant
+init.tauP    = 11;      % period
+init.phi     = 800;     % phase
+% Nonlinearity:
+init.alpha   = 800;     % maximum conductance
+init.beta    = 0.001;   % sensitivity of NL to generator signal
+init.gamma   = 0.001;   % determines threshold/shoulder location
+init.epsilon = -600;    % shifts all up or down
+
+% Set up model with hyper-node for optimization
 stimNode = DataNode(stimulus);
-model = LnHyperNode();
+model = LnHyperNode(init);
 model.upstream.add(stimNode);
 model.dt_stored = samplingInterval;
 
-% Set initial conditions. The first 5 parameters define the filter. The
-% following 4 parameters define the nonlinearity. All are placed in the same
-% vector to be optimized together.
-p0 = [5
-      3
-      0.1
-      11
-      800
-      800
-      0.001
-      0.001
-      -600];
-
-% Optimize hyper-node params
+% Optimize hyper-node parameters
 optimIters = 5;
 for i = 1:optimIters
-    model.optimizeParams(p0, stimulus, response, samplingInterval);
-    p0 = model.getFreeParams;
+    model.optimizeParams(model.getFreeParams, stimulus, response, samplingInterval);
     
     % Compute prediction
     prediction = model.processUpstream();
@@ -259,7 +289,8 @@ rSquaredAll  = computeVarianceExplained(...
     reshape(prediction',1,[]), reshape(responseTestSet',1,[]));
 disp(['Overall test R^2: ' num2str(rSquaredAll)])
 
-figure; subplot(2,1,1);
+figure;
+subplot(2,1,1);
 plot(tFilter, model.subnodes.filter.getFilter(SETTINGS.filterPts, samplingInterval));
 xlabel('time (s)');
 title('filter');
@@ -272,37 +303,45 @@ plot(nlX, nlY, 'ko');
 xlabel('filtered stimulus value'); ylabel('output (pA)');
 title('nonlinearity');
 
+
 %% Fit model with branching structure
+% In a very similar process, we can fit a model with a branching structure. This
+% structure is defined in the hyper-node class TwoArmLnHyperNode.
+
+% Set free parameter initial conditions
+clear init
+% filter1:
+init.numFilt1 = 5;       % scaling factor
+init.tauR1    = 3;       % rising phase time constant
+init.tauD1    = 0.1;     % dampening time constant
+init.tauP1    = 11;      % period
+init.phi1     = 800;     % phase
+% filter2:
+init.numFilt2 = 5;
+init.tauR2    = 3;
+init.tauD2    = 0.1;
+init.tauP2    = 11;
+init.phi2     = 800;
+% nonlinearity1:
+init.alpha1   = 800;     % maximum conductance
+init.beta1    = 0.001;   % sensitivity of NL to generator signal
+init.gamma1   = 0.001;   % determines threshold/shoulder location
+init.epsilon1 = -600;    % shifts all up or down
+% nonlinearity2:
+init.alpha2   = 800;
+init.beta2    = 0.001;
+init.gamma2   = 0.001;
+init.epsilon2 = -600;
 
 stimNode = DataNode(stimulus);
-model = TwoArmLnHyperNode();
+model = TwoArmLnHyperNode(init);
 model.upstream.add(stimNode);
 model.dt_stored = samplingInterval;
 
-p0 = [5
-      3
-      0.1
-      11
-      800
-      5
-      3
-      0.1
-      11
-      800
-      800
-      0.001
-      0.001
-      -600
-      800
-      0.001
-      0.001
-      -600];
-
-% Optimize hyper-node params
-optimIters = 5;
+% Optimize hyper-node parameters
+optimIters = 2;
 for i = 1:optimIters
-    model.optimizeParams(p0, stimulus, response, samplingInterval);
-    p0 = model.getFreeParams;
+    model.optimizeParams(model.getFreeParams, stimulus, response, samplingInterval);
     
     % Compute prediction
     prediction = model.processUpstream();
@@ -321,7 +360,8 @@ rSquaredAll  = computeVarianceExplained(...
 disp(['Overall test R^2: ' num2str(rSquaredAll)])
 
 tFilter = (1:SETTINGS.filterPts) * samplingInterval;
-figure; subplot(2,1,1); hold on;
+figure;
+subplot(2,1,1); hold on;
 plot(tFilter, model.subnodes.filter1.getFilter(SETTINGS.filterPts, samplingInterval));
 plot(tFilter, model.subnodes.filter2.getFilter(SETTINGS.filterPts, samplingInterval));
 xlabel('time (s)');
@@ -332,7 +372,9 @@ plot(xarray, model.subnodes.nonlinearity1.process(xarray))
 plot(xarray, model.subnodes.nonlinearity2.process(xarray))
 xlabel('filtered stimulus value'); ylabel('output (pA)');
 
+
 %% Try experimenting with more complicated models
+
 % The examples in this demo require only a few nodes and a simple chaining of
 % model stages. But because each node can have multiple parents and children, it
 % is possible to build larger graphs with more complicated structure. Try
